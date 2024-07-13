@@ -1,0 +1,50 @@
+{
+    "dependencies": {
+        "obs-studio": {
+            "version": "30.1.2",
+            "baseUrl": "https://github.com/obsproject/obs-studio/archive/refs/tags",
+            "label": "OBS sources",
+            "hashes": {
+                "macos": "490bae1c392b3b344b0270afd8cb887da4bc50bd92c0c426e96713c1ccb9701a",
+                "windows-x64": "c2dd03fa7fd01fad5beafce8f7156da11f9ed9a588373fd40b44a06f4c03b867"
+            }
+        },
+        "prebuilt": {
+            "version": "2024-03-19",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-Built obs-deps",
+            "hashes": {
+                "macos": "2e9bfb55a5e0e4c1086fa1fda4cf268debfead473089df2aaea80e1c7a3ca7ff",
+                "windows-x64": "6e86068371526a967e805f6f9903f9407adb683c21820db5f07da8f30d11e998"
+            }
+        },
+        "qt6": {
+            "version": "2024-03-19",
+            "baseUrl": "https://github.com/obsproject/obs-deps/releases/download",
+            "label": "Pre-Built Qt6",
+            "hashes": {
+                "macos": "694f1e639c017e3b1f456f735330dc5afae287cbea85757101af1368de3142c8",
+                "windows-x64": "72d1df34a0ef7413a681d5fcc88cae81da60adc03dcd23ef17862ab170bcc0dd"
+            },
+            "debugSymbols": {
+                "windows-x64": "fbddd1f659c360f2291911ac5709b67b6f8182e6bca519d24712e4f6fd3cc865"
+            }
+        }
+    },
+    "platformConfig": {
+        "macos": {
+            "bundleId": "com.obs-plugin.patizo"
+        }
+    },
+    "name": "patizo",
+    "displayName": "Patizo Plugin for OBS Studio",
+    "version": "0.0.1",
+    "author": "BitRate27",
+    "website": "https://github.com/BitRate27",
+    "email": "bitrate27@gmail.com",
+    "uuids": {
+        "windowsApp": "EBA2F0E5-4B31-46FA-8C13-14A53F6D4C71",
+        "macosPackage": "77A6CEF7-3C1E-4F0B-BCE2-DFC65628938D",
+        "macosInstaller": "CF38AC7E-C977-46C8-BB5E-95C7A19FA33A"
+    }
+}
