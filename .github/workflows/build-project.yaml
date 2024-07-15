@@ -83,7 +83,10 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
+      - name: Print notarize output
+        run: echo "Notarize Output: ${{ needs.check-event.outputs.notarize }}"
+      - name: Print havenot output
+        run: echo "HaveNotarize Output: ${{ steps.codesign.outputs.haveNotarizationUser
       - name: Set Up Environment 🔧
         id: setup
         run: |
