@@ -78,7 +78,7 @@ NDIDock::NDIDock(QWidget *parent) : QWidget(parent) {
     layout->addWidget(connectButton);
     layout->addWidget(videoLabel);
 
-    setLayout(container);
+    setLayout(layout);
 
     connect(refreshButton, &QPushButton::clicked, this, &NDIDock::refreshSources);
     connect(connectButton, &QPushButton::clicked, this, &NDIDock::connectToSource);

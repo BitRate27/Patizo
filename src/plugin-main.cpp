@@ -34,7 +34,7 @@ bool obs_module_load(void) {
     NDIDock *dock = new NDIDock(main_window);
     obs_frontend_add_dock_by_id("PatizoDock",
 		"patizo-dock",
-		dock->getWidget());
+		dock);
 	blog(LOG_INFO, "[patizo] Patizo dock added");
     return true;
 }
