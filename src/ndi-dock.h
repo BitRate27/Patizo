@@ -2,11 +2,11 @@
 
 #include "obs-module.h"
 #include "obs-frontend-api.h"
-#include <QComboBox>
-#include <QPushButton>
-#include <QLabel>
-#include <QThread>
-#include <QMutex>
+#include "qcombobox.h"
+#include "qpushbutton.h"
+#include "qlabel.h"
+#include "qthread.h"
+#include "qmutex.h"
 #include <Processing.NDI.Lib.h>
 
 class NDIReceiver : public QObject {

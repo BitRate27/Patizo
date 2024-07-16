@@ -1,7 +1,7 @@
 #include "ndi-dock.h"
-#include <QVBoxLayout>
-#include <QMainWindow>
-#include <QPixmap>
+#include "qboxlayout.h"
+#include "qmainwindow.h"
+#include "qpixmap.h"
 
 NDIReceiver::NDIReceiver() : pNDI_recv(nullptr), running(false) {}
 
