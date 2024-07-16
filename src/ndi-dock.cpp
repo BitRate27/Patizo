@@ -1,4 +1,4 @@
-include "ndi_dock.h"
+#include "ndi-dock.h"
 #include <QVBoxLayout>
 #include <QMainWindow>
 #include <QPixmap>
