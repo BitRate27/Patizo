@@ -38,5 +38,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
                 src/plugin-main.cpp
                 src/ndi-dock.cpp 
                 src/ndi-dock.h)
+# Add the lib/ndi directory as an include directory
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE lib/ndi)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
