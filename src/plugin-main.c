@@ -18,18 +18,24 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 
 #include <obs-module.h>
 #include <plugin-support.h>
+#include "ndi-dock.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
 
-bool obs_module_load(void)
-{
-	obs_log(LOG_INFO, "Patizo plugin loaded successfully (version %s)",
-		PLUGIN_VERSION);
-	return true;
+bool obs_module_load(void) {
+    if (!NDIlib_initialize()) {
+        blog(LOG_ERROR, "Failed to initialize NDI library");
+        return false;
+    }
+
+    QMainWindow *main_window = (QMainWindow*)obs_frontend_get_main_window();
+    NDIDock *dock = new NDIDock(main_window);
+    obs_frontend_add_dock(dock);
+	blog(LOG_INFO, "[patizo] Patizo dock added");
+    return true;
 }
 
-void obs_module_unload(void)
-{
-	obs_log(LOG_INFO, "plugin unloaded");
+void obs_module_unload() {
+    NDIlib_destroy();
 }
