@@ -1,7 +1,7 @@
 #pragma once
 
 #include "obs-module.h"
-#include "obs-frontend-api.h"
+#include <obs-frontend-api.h>
 #include "qcombobox.h"
 #include "qpushbutton.h"
 #include "qlabel.h"
