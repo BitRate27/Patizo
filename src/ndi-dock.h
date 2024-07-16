@@ -52,6 +52,3 @@ private:
     QThread receiverThread;
     NDIReceiver *ndiReceiver;
 };
-
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("ndi-dock", "en-US")
