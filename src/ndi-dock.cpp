@@ -61,7 +61,7 @@ void NDIReceiver::captureFrames() {
     }
 }
 
-NDIDock::NDIDock(QWidget *parent) : QDockWidget(parent) {
+NDIDock::NDIDock(QWidget *parent) : QWidget(parent) {
     setWindowTitle("NDI Source Dock");
 
     QWidget *container = new QWidget(this);
@@ -89,7 +89,9 @@ NDIDock::NDIDock(QWidget *parent) : QDockWidget(parent) {
     connect(&receiverThread, &QThread::finished, ndiReceiver, &QObject::deleteLater);
     connect(this, &NDIDock::destroyed, &receiverThread, &QThread::quit);
     connect(ndiReceiver, &NDIReceiver::frameReady, this, &NDIDock::updateFrame);
-
+    obs_frontend_add_dock_by_id("PatizoDock",
+		"patizo-dock",
+		this);
     receiverThread.start();
 }
 

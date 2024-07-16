@@ -2,7 +2,6 @@
 
 #include "obs-module.h"
 #include "obs-frontend-api.h"
-#include <QDockWidget>
 #include <QComboBox>
 #include <QPushButton>
 #include <QLabel>
@@ -32,7 +31,7 @@ private:
     bool running;
 };
 
-class NDIDock : public QDockWidget {
+class NDIDock : public QWidget {
     Q_OBJECT
 
 public:
