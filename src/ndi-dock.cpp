@@ -22,7 +22,7 @@ void NDIReceiver::connectToSource(const QString& sourceName) {
 
     NDIlib_recv_create_v3_t recv_create_desc;
     recv_create_desc.source_to_connect_to = selected_source;
-    recv_create_desc.color_format = NDIlib_recv_color_format_BGRA_RGBA;
+    recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
 
     pNDI_recv = NDIlib_recv_create_v3(&recv_create_desc);
 
@@ -78,7 +78,7 @@ NDIDock::NDIDock(QWidget *parent) : QWidget(parent) {
     layout->addWidget(connectButton);
     layout->addWidget(videoLabel);
 
-    setWidget(container);
+    setLayout(container);
 
     connect(refreshButton, &QPushButton::clicked, this, &NDIDock::refreshSources);
     connect(connectButton, &QPushButton::clicked, this, &NDIDock::connectToSource);
@@ -89,9 +89,7 @@ NDIDock::NDIDock(QWidget *parent) : QWidget(parent) {
     connect(&receiverThread, &QThread::finished, ndiReceiver, &QObject::deleteLater);
     connect(this, &NDIDock::destroyed, &receiverThread, &QThread::quit);
     connect(ndiReceiver, &NDIReceiver::frameReady, this, &NDIDock::updateFrame);
-    obs_frontend_add_dock_by_id("PatizoDock",
-		"patizo-dock",
-		this);
+
     receiverThread.start();
 }
 

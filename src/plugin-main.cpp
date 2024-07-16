@@ -32,7 +32,9 @@ bool obs_module_load(void) {
 
     QMainWindow *main_window = (QMainWindow*)obs_frontend_get_main_window();
     NDIDock *dock = new NDIDock(main_window);
-    obs_frontend_add_dock(dock);
+    obs_frontend_add_dock_by_id("PatizoDock",
+		"patizo-dock",
+		dock->getWidget());
 	blog(LOG_INFO, "[patizo] Patizo dock added");
     return true;
 }
