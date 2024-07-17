@@ -13,7 +13,7 @@ void NDIReceiver::connectToSource(const QString& sourceName) {
     QMutexLocker locker(&mutex);
     
     if (pNDI_recv) {
-        NDIlib_recv_destroy(pNDI_recv);
+        ndiLib->recv_destroy(pNDI_recv);
         pNDI_recv = nullptr;
     }
 
@@ -24,7 +24,7 @@ void NDIReceiver::connectToSource(const QString& sourceName) {
     recv_create_desc.source_to_connect_to = selected_source;
     recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
 
-    pNDI_recv = NDIlib_recv_create_v3(&recv_create_desc);
+    pNDI_recv = ndiLib->recv_create_v3(&recv_create_desc);
 
     if (pNDI_recv) {
         running = true;
@@ -36,7 +36,7 @@ void NDIReceiver::stop() {
     QMutexLocker locker(&mutex);
     running = false;
     if (pNDI_recv) {
-        NDIlib_recv_destroy(pNDI_recv);
+        ndiLib->recv_destroy(pNDI_recv);
         pNDI_recv = nullptr;
     }
 }
@@ -47,13 +47,13 @@ void NDIReceiver::captureFrames() {
         if (!pNDI_recv) break;
 
         NDIlib_video_frame_v2_t video_frame;
-        NDIlib_frame_type_e frame_type = NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 0);
+        NDIlib_frame_type_e frame_type = ndiLib->recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 0);
 
         if (frame_type == NDIlib_frame_type_video) {
             QImage image(video_frame.p_data, video_frame.xres, video_frame.yres, QImage::Format_RGBA8888);
             emit frameReady(image.copy()); // Create a deep copy of the image
 
-            NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
+            ndiLib->recv_free_video_v2(pNDI_recv, &video_frame);
         }
 
         locker.unlock();
@@ -100,23 +100,25 @@ NDIDock::~NDIDock() {
 
 void NDIDock::refreshSources() {
     sourceList->clear();
-
-    NDIlib_find_instance_t pNDI_find = NDIlib_find_create_v2();
+    NDIlib_find_create_t find_desc = {0};
+	find_desc.show_local_sources = true;
+	find_desc.p_groups = NULL;
+    NDIlib_find_instance_t pNDI_find = ndiLib->find_create_v2(&find_desc);
     if (!pNDI_find) return;
 
     uint32_t no_sources = 0;
     const NDIlib_source_t* p_sources = nullptr;
     
     while (!p_sources) {
-        NDIlib_find_wait_for_sources(pNDI_find, 1000);
-        p_sources = NDIlib_find_get_current_sources(pNDI_find, &no_sources);
+        ndiLib->find_wait_for_sources(pNDI_find, 1000);
+        p_sources = ndiLib->find_get_current_sources(pNDI_find, &no_sources);
     }
 
     for (uint32_t i = 0; i < no_sources; i++) {
         sourceList->addItem(p_sources[i].p_ndi_name);
     }
 
-    NDIlib_find_destroy(pNDI_find);
+    ndiLib->find_destroy(pNDI_find);
 }
 
 void NDIDock::connectToSource() {

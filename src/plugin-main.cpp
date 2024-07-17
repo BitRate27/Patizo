@@ -19,13 +19,23 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <obs-module.h>
 #include <plugin-support.h>
 #include <QMainWindow>
+#include <QLibrary>
+#include <QDir>
+#include <QFileInfo>
+#include "plugin-main.h"
 #include "ndi-dock.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("ndi-dock", "en-US")
+const NDIlib_v4 *ndiLib = nullptr;
+const NDIlib_v5 *load_ndilib();
 
+typedef const NDIlib_v5 *(*NDIlib_v5_load_)(void);
+QLibrary *loaded_lib = nullptr;
+
+NDIlib_find_instance_t ndi_finder = nullptr;
 bool obs_module_load(void) {
-    if (!NDIlib_initialize()) {
+    if (!ndiLib->initialize()) {
         blog(LOG_ERROR, "Failed to initialize NDI library");
         return false;
     }
@@ -40,5 +50,57 @@ bool obs_module_load(void) {
 }
 
 void obs_module_unload() {
-    NDIlib_destroy();
+    ndiLib->destroy();
+}
+const NDIlib_v4 *load_ndilib()
+{
+	QStringList locations;
+	QString path = QString(qgetenv(NDILIB_REDIST_FOLDER));
+	if (!path.isEmpty()) {
+		locations << path;
+	}
+#if defined(__linux__) || defined(__APPLE__)
+	locations << "/usr/lib";
+	locations << "/usr/local/lib";
+#endif
+	for (QString location : locations) {
+		path = QDir::cleanPath(
+			QDir(location).absoluteFilePath(NDILIB_LIBRARY_NAME));
+		blog(LOG_INFO, "[patizo] load_ndilib: Trying '%s'",
+		     path.toUtf8().constData());
+		QFileInfo libPath(path);
+		if (libPath.exists() && libPath.isFile()) {
+			path = libPath.absoluteFilePath();
+			blog(LOG_INFO,
+			     "[patizo] load_ndilib: Found NDI library at '%s'",
+			     path.toUtf8().constData());
+			loaded_lib = new QLibrary(path, nullptr);
+			if (loaded_lib->load()) {
+				blog(LOG_INFO,
+				     "[patizo] load_ndilib: NDI runtime loaded successfully");
+				NDIlib_v5_load_ lib_load =
+					(NDIlib_v5_load_)loaded_lib->resolve(
+						"NDIlib_v5_load");
+				if (lib_load != nullptr) {
+					blog(LOG_INFO,
+					     "[patizo] load_ndilib: NDIlib_v5_load found");
+					return lib_load();
+				} else {
+					blog(LOG_ERROR,
+					     "[patizo] load_ndilib: ERROR: NDIlib_v5_load not found in loaded library");
+				}
+			} else {
+				blog(LOG_ERROR,
+				     "[patizo] load_ndilib: ERROR: QLibrary returned the following error: '%s'",
+				     loaded_lib->errorString()
+					     .toUtf8()
+					     .constData());
+				delete loaded_lib;
+				loaded_lib = nullptr;
+			}
+		}
+	}
+	blog(LOG_ERROR,
+	     "[patizo] load_ndilib: ERROR: Can't find the NDI library");
+	return nullptr;
 }

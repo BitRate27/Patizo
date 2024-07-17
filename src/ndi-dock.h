@@ -7,7 +7,7 @@
 #include "qlabel.h"
 #include "qthread.h"
 #include "qmutex.h"
-#include <Processing.NDI.Lib.h>
+#include "plugin-main.h"
 
 class NDIReceiver : public QObject {
     Q_OBJECT
