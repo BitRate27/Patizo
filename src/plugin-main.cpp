@@ -35,6 +35,13 @@ QLibrary *loaded_lib = nullptr;
 
 NDIlib_find_instance_t ndi_finder = nullptr;
 bool obs_module_load(void) {
+
+    ndiLib = load_ndilib();
+	if (!ndiLib) {
+		blog(LOG_ERROR,
+		     "[patizo] obs_module_load: load_ndilib() failed; Module won't load.");
+	}
+
     if (!ndiLib->initialize()) {
         blog(LOG_ERROR, "Failed to initialize NDI library");
         return false;
@@ -52,6 +59,7 @@ bool obs_module_load(void) {
 void obs_module_unload() {
     ndiLib->destroy();
 }
+
 const NDIlib_v4 *load_ndilib()
 {
 	QStringList locations;
