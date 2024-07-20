@@ -23,41 +23,46 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <QDir>
 #include <QFileInfo>
 #include "plugin-main.h"
+#include "ndi-ptz-device-manager.h"
 #include "ndi-dock.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("ndi-dock", "en-US")
-const NDIlib_v4 *ndiLib = nullptr;
-const NDIlib_v5 *load_ndilib();
 
+const NDIlib_v5 *load_ndilib();
+NDIPTZDeviceManager *g_ndiptz;
+const NDIlib_v4 *g_ndiLib;
 typedef const NDIlib_v5 *(*NDIlib_v5_load_)(void);
 QLibrary *loaded_lib = nullptr;
 
 NDIlib_find_instance_t ndi_finder = nullptr;
 bool obs_module_load(void) {
 
-    ndiLib = load_ndilib();
-	if (!ndiLib) {
+    g_ndiLib = load_ndilib();
+	if (!g_ndiLib) {
 		blog(LOG_ERROR,
 		     "[patizo] obs_module_load: load_ndilib() failed; Module won't load.");
 	}
 
-    if (!ndiLib->initialize()) {
+    if (!g_ndiLib->initialize()) {
         blog(LOG_ERROR, "Failed to initialize NDI library");
         return false;
     }
 
+	g_ndiptz = new NDIPTZDeviceManager();
+	g_ndiptz->init(g_ndiLib);
+
     QMainWindow *main_window = (QMainWindow*)obs_frontend_get_main_window();
     NDIDock *dock = new NDIDock(main_window);
-    obs_frontend_add_dock_by_id("PatizoDock",
-		"patizo-dock",
-		dock);
+    obs_frontend_add_dock_by_id("patizo-dock",
+								"Patizo Dock",
+								dock);
 	blog(LOG_INFO, "[patizo] Patizo dock added");
     return true;
 }
 
 void obs_module_unload() {
-    ndiLib->destroy();
+    g_ndiLib->destroy();
 }
 
 const NDIlib_v4 *load_ndilib()

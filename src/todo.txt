@@ -1,0 +1,1 @@
+Register callback to update the sources_list

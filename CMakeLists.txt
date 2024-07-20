@@ -12,6 +12,9 @@ include(defaults)
 include(helpers)
 
 add_library(${CMAKE_PROJECT_NAME} MODULE)
+add_subdirectory(lib/visca27)
+set_target_properties(visca27 PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/visca27/${CMAKE_BUILD_TYPE}/visca27.lib)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE visca27)
 
 find_package(libobs REQUIRED)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
@@ -37,8 +40,10 @@ endif()
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE 
                 src/plugin-main.cpp
                 src/ndi-dock.cpp 
-                src/ndi-dock.h)
+                src/ndi-dock.h
+                src/ndi-ptz-device-manager.cpp
+                src/ndi-ptz-device-manager.h)
 # Add the lib/ndi directory as an include directory
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/lib/ndi)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/lib/ndi ${CMAKE_SOURCE_DIR}/lib/visca27 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
