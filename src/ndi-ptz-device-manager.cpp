@@ -105,7 +105,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 void NDIPTZDeviceManager::closeAllConnections()
 {
 	for (auto &recv : _recvs) {
-		// Close Visca connection
+		_ndiLib->recv_destroy(recv.second.recv);
 		recv.second.visca.disconnectCamera();
 	}
 	_recvs.clear();

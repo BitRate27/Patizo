@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <obs.h>
 #include "Processing.NDI.Lib.h"
 #include "ViscaAPI.h"
 
@@ -17,6 +18,7 @@ typedef std::function<void(const std::map<std::string, recv_info_t>&)>
 
 class NDIPTZDeviceManager {
 public:
+	NDIPTZDeviceManager() : _current(""), _recvs(), _ndiLib(nullptr) {};
     void init(const NDIlib_v4* ndiLib);
     ~NDIPTZDeviceManager();
 
@@ -30,7 +32,7 @@ private:
     std::map<std::string, recv_info_t> _recvs;
     std::vector<RecvsChangedCallback> _recvsChangedCallbacks;
     const NDIlib_v4* _ndiLib;
-    std::string _current;
+    std::string _current = "";
 
     // Helper methods
     void updateRecvInfo(const NDIlib_v4* ndiLib, 

@@ -38,11 +38,11 @@ if(ENABLE_QT)
 endif()
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE 
-                src/plugin-main.cpp
-                src/ndi-dock.cpp 
-                src/ndi-dock.h
-                src/ndi-ptz-device-manager.cpp
-                src/ndi-ptz-device-manager.h)
+src/plugin-main.cpp
+src/ptz-controller.cpp 
+src/ptz-controller.h
+src/ndi-ptz-device-manager.cpp
+src/ndi-ptz-device-manager.h)
 # Add the lib/ndi directory as an include directory
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/lib/ndi ${CMAKE_SOURCE_DIR}/lib/visca27 )
 

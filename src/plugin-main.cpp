@@ -24,7 +24,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <QFileInfo>
 #include "plugin-main.h"
 #include "ndi-ptz-device-manager.h"
-#include "ndi-dock.h"
+#include "ptz-controller.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("ndi-dock", "en-US")
@@ -52,11 +52,7 @@ bool obs_module_load(void) {
 	g_ndiptz = new NDIPTZDeviceManager();
 	g_ndiptz->init(g_ndiLib);
 
-    QMainWindow *main_window = (QMainWindow*)obs_frontend_get_main_window();
-    NDIDock *dock = new NDIDock(main_window);
-    obs_frontend_add_dock_by_id("patizo-dock",
-								"Patizo Dock",
-								dock);
+	ptz_controller_init(g_ndiLib, g_ndiptz);
 	blog(LOG_INFO, "[patizo] Patizo dock added");
     return true;
 }
