@@ -116,9 +116,16 @@ void InteractiveCanvas::paintEvent(QPaintEvent *event)
 		&video_frame, nullptr, nullptr, 1000);
 
 	if (frame_type == NDIlib_frame_type_video) {
-		QImage image(video_frame.p_data, video_frame.xres,
-			     video_frame.yres, QImage::Format_RGBA8888);
-		painter.drawImage(imageRect(canvas), canvas);
+		
+		unsigned char *_imageData = (unsigned char *)bzalloc(
+				video_frame.xres * video_frame.yres * 4);
+
+		convertUYVYtoRGB32(video_frame.p_data, video_frame.xres,
+				   video_frame.yres, _imageData);
+				   
+		QImage image(_imageData, video_frame.xres,
+			     video_frame.yres, QImage::Format_RGB32);
+		painter.drawImage(imageRect(image), image);
 		_ndiLib->recv_free_video_v2(
 			recv,
 			&video_frame);
