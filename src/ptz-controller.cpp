@@ -14,7 +14,6 @@
 #include <Processing.NDI.Lib.h>
 #include <mutex>
 
-
 // Function to convert a single UYVY pixel pair to two RGB pixels
 void UYVYtoRGB(int U, int Y1, int V, int Y2, QRgb &rgb1, QRgb &rgb2)
 {
@@ -64,7 +63,38 @@ void convertUYVYtoRGB32(const unsigned char *uyvyData,
 		}
 	}
 }
+void newconvertUYVYtoRGB32(const unsigned char *uyvy, int width, int height,
+			unsigned char *rgb)
+{
+	for (int i = 0; i < width * height / 2; ++i) {
+		int u = uyvy[i * 4 + 0];
+		int y1 = uyvy[i * 4 + 1];
+		int v = uyvy[i * 4 + 2];
+		int y2 = uyvy[i * 4 + 3];
 
+		int c = y1 - 16;
+		int d = u - 128;
+		int e = v - 128;
+
+		rgb[i * 8 + 0] =
+			qBound(0, (298 * c + 409 * e + 128) >> 8, 255); // r
+		rgb[i * 8 + 1] = qBound(
+			0, (298 * c - 100 * d - 208 * e + 128) >> 8, 255); // g
+		rgb[i * 8 + 2] =
+			qBound(0, (298 * c + 516 * d + 128) >> 8, 255); // b
+		rgb[i * 8 + 3] = 255;                                   // a
+
+		c = y2 - 16;
+
+		rgb[i * 8 + 4] =
+			qBound(0, (298 * c + 409 * e + 128) >> 8, 255); // r
+		rgb[i * 8 + 5] = qBound(
+			0, (298 * c - 100 * d - 208 * e + 128) >> 8, 255); // g
+		rgb[i * 8 + 6] =
+			qBound(0, (298 * c + 516 * d + 128) >> 8, 255); // b
+		rgb[i * 8 + 7] = 255;                                   // a
+	}
+}
 InteractiveCanvas::InteractiveCanvas(QWidget *parent,
 				     const NDIlib_v4 *ndiLib,
 				     NDIPTZDeviceManager *manager)
@@ -116,19 +146,23 @@ void InteractiveCanvas::paintEvent(QPaintEvent *event)
 		&video_frame, nullptr, nullptr, 1000);
 
 	if (frame_type == NDIlib_frame_type_video) {
-		
-		unsigned char *_imageData = (unsigned char *)bzalloc(
-				video_frame.xres * video_frame.yres * 4);
+		QVector<uchar> rgbData(video_frame.xres * video_frame.yres * 4);
 
-		convertUYVYtoRGB32(video_frame.p_data, video_frame.xres,
-				   video_frame.yres, _imageData);
-				   
-		QImage image(_imageData, video_frame.xres,
-			     video_frame.yres, QImage::Format_RGB32);
-		painter.drawImage(imageRect(image), image);
-		_ndiLib->recv_free_video_v2(
-			recv,
-			&video_frame);
+		// Convert UYVY to RGB32
+		newconvertUYVYtoRGB32(video_frame.p_data, video_frame.xres,
+				   video_frame.yres, rgbData.data());
+
+		// Create QImage from the converted data
+		QImage image(rgbData.data(), video_frame.xres, video_frame.yres,
+			     QImage::Format_RGBA8888);
+
+		if (!image.isNull()) {
+			// Draw the image
+			painter.drawImage(imageRect(image), image);
+		}
+
+		// Free the NDI video frame
+		_ndiLib->recv_free_video_v2(recv, &video_frame);
 	}
 }
 
