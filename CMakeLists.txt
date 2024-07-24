@@ -44,6 +44,10 @@ src/ptz-controller.h
 src/ndi-ptz-device-manager.cpp
 src/ndi-ptz-device-manager.h)
 # Add the lib/ndi directory as an include directory
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
+    include_directories(SYSTEM ${CMAKE_OSX_SYSROOT}/usr/include)
+endif()
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/lib/ndi ${CMAKE_SOURCE_DIR}/lib/visca27 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
