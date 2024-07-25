@@ -242,4 +242,4 @@ void ptz_controller_init(const NDIlib_v4* ndiLib, NDIPTZDeviceManager *manager)
 	    obs_module_text("PTZ Controller"), g_dialog);
 
     blog(LOG_INFO, "[patizo] obs_module_load: PTZ Controller Dock added");
-}
+};

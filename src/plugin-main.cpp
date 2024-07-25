@@ -112,4 +112,4 @@ const NDIlib_v4 *load_ndilib()
 	blog(LOG_ERROR,
 	     "[patizo] load_ndilib: ERROR: Can't find the NDI library");
 	return nullptr;
-}
+};
