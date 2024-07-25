@@ -11,8 +11,7 @@
       "hidden": true,
       "cacheVariables": {
         "ENABLE_FRONTEND_API": true,
-        "ENABLE_QT": true,
-        "CMAKE_COMPILE_WARNING_AS_ERROR": true
+        "ENABLE_QT": true
       }
     },
     {
