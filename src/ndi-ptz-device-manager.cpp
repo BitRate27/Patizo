@@ -151,11 +151,11 @@ static ViscaAPI getViscaAPI(const NDIlib_v4 *ndiLib,
 	char ip[100];
 	const char *p_url = ndiLib->recv_get_web_control(recv);
 	if (p_url) {
-		sprintf_s(ip, 100, "%s",
+		snprintf(ip, 100, "%s",
 			  extractIPAddress(std::string(p_url)).c_str());
 		ndiLib->recv_free_string(recv, p_url);
 	} else {
-		sprintf_s(ip, 100, "127.0.0.1");
+		snprintf(ip, 100, "127.0.0.1");
 	}
 	visca.connectCamera(std::string(ip), 5678);
 	return visca;

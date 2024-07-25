@@ -149,11 +149,11 @@ void InteractiveCanvas::paintEvent(QPaintEvent *event)
 		QVector<uchar> rgbData(video_frame.xres * video_frame.yres * 4);
 
 		// Convert UYVY to RGB32
-		newconvertUYVYtoRGB32(video_frame.p_data, video_frame.xres,
-				   video_frame.yres, rgbData.data());
+		//newconvertUYVYtoRGB32(video_frame.p_data, video_frame.xres,
+		//		   video_frame.yres, rgbData.data());
 
 		// Create QImage from the converted data
-		QImage image(rgbData.data(), video_frame.xres, video_frame.yres,
+		QImage image(video_frame.p_data, video_frame.xres, video_frame.yres,
 			     QImage::Format_RGBA8888);
 
 		if (!image.isNull()) {

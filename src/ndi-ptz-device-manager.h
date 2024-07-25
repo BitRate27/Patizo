@@ -1,5 +1,4 @@
-#ifndef NDI_PTZ_DEVICE_MANAGER_H
-#define NDI_PTZ_DEVICE_MANAGER_H
+#pragma once
 
 #include <map>
 #include <string>
@@ -43,5 +42,3 @@ private:
     void closeAllConnections();
     std::vector<std::string> createListOfNDINames(obs_scene_t *scene);
 };
-
-#endif // NDI_PTZ_DEVICE_MANAGER_H
