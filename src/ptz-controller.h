@@ -1,6 +1,4 @@
 #pragma once
-#include <Processing.NDI.Lib.h>
-#include "ViscaAPI.h"
 #include <QMetaObject>
 #include <QThread>
 #include <QObject>
@@ -8,7 +6,9 @@
 #include <string>
 #include <qwidget.h>
 #include <mutex>
+#include "ViscaAPI.h"
 #include "ndi-ptz-device-manager.h"
+#include <Processing.NDI.Lib.h>
 
 class InteractiveCanvas : public QWidget {
 	Q_OBJECT

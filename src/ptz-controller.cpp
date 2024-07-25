@@ -1,8 +1,7 @@
 #include <obs.h>
 #include <obs-module.h>
 #include <obs-frontend-api.h>
-#include "ptz-controller.h"
-#include "ndi-ptz-device-manager.h"
+
 #include <qevent.h>
 #include <qpainter.h>
 #include <qlabel.h>
@@ -11,8 +10,10 @@
 #include <pthread.h>
 #include <thread>
 #include <regex>
-#include <Processing.NDI.Lib.h>
 #include <mutex>
+#include "ptz-controller.h"
+#include "ndi-ptz-device-manager.h"
+#include <Processing.NDI.Lib.h>
 
 // Function to convert a single UYVY pixel pair to two RGB pixels
 void UYVYtoRGB(int U, int Y1, int V, int Y2, QRgb &rgb1, QRgb &rgb2)
@@ -156,7 +157,7 @@ void InteractiveCanvas::paintEvent(QPaintEvent *event)
 
 		// Create QImage from the converted data
 		QImage image(video_frame.p_data, video_frame.xres, video_frame.yres,
-			     QImage::Format_ARGB32);
+			     QImage::Format_RGBA8888);
 
 		if (!image.isNull()) {
 			// Draw the image
