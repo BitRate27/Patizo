@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <cstddef>
 #include <functional>
 #include <vector>
 #include <obs.h>
