@@ -27,7 +27,7 @@ private:
 	QImage canvas;
 	void resizeEvent(QResizeEvent *event) override;
 	void resizeCanvas(const QSize &newSize);
-	QRect imageRect(QImage &image);
+	QRect imageRect(QImage &image) const;
 	const NDIlib_v4 *_ndiLib;
 	NDIPTZDeviceManager *_manager;
 };

@@ -106,6 +106,7 @@ InteractiveCanvas::InteractiveCanvas(QWidget *parent,
 
 void InteractiveCanvas::updateImage(int dummy)
 {
+	(void)dummy;
 	update();
 }
 
@@ -128,7 +129,7 @@ void InteractiveCanvas::mouseReleaseEvent(QMouseEvent *event)
 	}
 }
 
-QRect InteractiveCanvas::imageRect(QImage &image) {
+QRect InteractiveCanvas::imageRect(QImage &image) const {
 	QSize scaledSize =
 		image.size().scaled(this->size(), Qt::KeepAspectRatio);
 	// Calculate the top left position to center the image
@@ -138,6 +139,7 @@ QRect InteractiveCanvas::imageRect(QImage &image) {
 };
 void InteractiveCanvas::paintEvent(QPaintEvent *event)
 {
+	(void)event;
 	QPainter painter(this);
 	NDIlib_video_frame_v2_t video_frame;
 	auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
@@ -154,7 +156,7 @@ void InteractiveCanvas::paintEvent(QPaintEvent *event)
 
 		// Create QImage from the converted data
 		QImage image(video_frame.p_data, video_frame.xres, video_frame.yres,
-			     QImage::Format_RGBA8888);
+			     QImage::Format_ARGB32);
 
 		if (!image.isNull()) {
 			// Draw the image
