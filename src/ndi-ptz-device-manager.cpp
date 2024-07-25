@@ -6,6 +6,7 @@
 
 static void on_scene_changed(enum obs_frontend_event event, void *param)
 {
+	(void)event;
 	NDIPTZDeviceManager *manager =
 		static_cast<NDIPTZDeviceManager *>(param);
 	manager->onSceneChanged();
