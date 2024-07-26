@@ -78,21 +78,21 @@ void newconvertUYVYtoRGB32(const unsigned char *uyvy, int width, int height,
 		int e = v - 128;
 
 		rgb[i * 8 + 0] =
-			qBound(0, (298 * c + 409 * e + 128) >> 8, 255); // r
-		rgb[i * 8 + 1] = qBound(
+			(unsigned char)qBound(0, (298 * c + 409 * e + 128) >> 8, 255); // r
+		rgb[i * 8 + 1] = (unsigned char)qBound(
 			0, (298 * c - 100 * d - 208 * e + 128) >> 8, 255); // g
 		rgb[i * 8 + 2] =
-			qBound(0, (298 * c + 516 * d + 128) >> 8, 255); // b
+			(unsigned char)qBound(0, (298 * c + 516 * d + 128) >> 8, 255); // b
 		rgb[i * 8 + 3] = 255;                                   // a
 
 		c = y2 - 16;
 
 		rgb[i * 8 + 4] =
-			qBound(0, (298 * c + 409 * e + 128) >> 8, 255); // r
-		rgb[i * 8 + 5] = qBound(
+			(unsigned char)qBound(0, (298 * c + 409 * e + 128) >> 8, 255); // r
+		rgb[i * 8 + 5] = (unsigned char)qBound(
 			0, (298 * c - 100 * d - 208 * e + 128) >> 8, 255); // g
 		rgb[i * 8 + 6] =
-			qBound(0, (298 * c + 516 * d + 128) >> 8, 255); // b
+			(unsigned char)qBound(0, (298 * c + 516 * d + 128) >> 8, 255); // b
 		rgb[i * 8 + 7] = 255;                                   // a
 	}
 }
