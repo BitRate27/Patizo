@@ -1,2 +1,3 @@
+Handel source deleted
 Register callback to update the sources_list
 Video won't captureFrames (100ms timeout)

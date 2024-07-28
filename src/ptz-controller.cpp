@@ -64,6 +64,18 @@ void convertUYVYtoRGB32(const unsigned char *uyvyData,
 		}
 	}
 }
+void debugRGB32(const unsigned char *abgrData, int width, int height, unsigned char *rgbaData)
+{
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+			int index = (y * (width*4) + (x*4));
+			rgbaData[index + 3] = abgrData[index + 0];
+			rgbaData[index + 2] = abgrData[index + 3];
+			rgbaData[index + 1] = abgrData[index + 2];
+			rgbaData[index + 0] = abgrData[index + 1];
+		}
+	}
+}
 void newconvertUYVYtoRGB32(const unsigned char *uyvy, int width, int height,
 			unsigned char *rgb)
 {
@@ -156,7 +168,9 @@ void InteractiveCanvas::paintEvent(QPaintEvent *event)
 		//		   video_frame.yres, rgbData.data());
 
 		// Create QImage from the converted data
-		QImage image(video_frame.p_data, video_frame.xres, video_frame.yres,
+		debugRGB32(video_frame.p_data, video_frame.xres,
+			   video_frame.yres, rgbData.data());
+		QImage image(rgbData.data(), video_frame.xres, video_frame.yres,
 			     QImage::Format_RGBA8888);
 
 		if (!image.isNull()) {

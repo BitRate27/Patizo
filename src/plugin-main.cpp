@@ -24,6 +24,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include <QFileInfo>
 #include "plugin-main.h"
 #include "ndi-ptz-device-manager.h"
+#include "ptz-presets-dock.h"
 #include "ptz-controller.h"
 
 OBS_DECLARE_MODULE()
@@ -52,8 +53,10 @@ bool obs_module_load(void) {
 	g_ndiptz = new NDIPTZDeviceManager();
 	g_ndiptz->init(g_ndiLib);
 
+	ptz_presets_init(g_ndiLib, g_ndiptz);
+	blog(LOG_INFO, "[patizo] Patizo presets dock added");
 	ptz_controller_init(g_ndiLib, g_ndiptz);
-	blog(LOG_INFO, "[patizo] Patizo dock added");
+	blog(LOG_INFO, "[patizo] Patizo controller dock added");
     return true;
 }
 
