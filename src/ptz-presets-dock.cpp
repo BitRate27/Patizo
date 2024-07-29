@@ -144,6 +144,7 @@ void ptz_presets_hotkey_function(void* priv, obs_hotkey_id id, obs_hotkey_t* hot
 
 	if (pressed) {
 		PresetButton *button = static_cast<PresetButton*>(priv);
+		(void)button;
         //ptz_preset_button_pressed(button->index);
     }
 }
