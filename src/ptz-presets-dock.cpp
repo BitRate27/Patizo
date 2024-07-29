@@ -33,7 +33,7 @@ public:
 	inline void PresetButtonClicked() { 
 		_ndiLib->recv_ptz_recall_preset(_manager->getRecvInfo(_manager->getCurrent()).recv,
 						  index,
-						  5);ptz_preset_button_pressed(index); 
+						  5); 
 	}
 	int index;
 	const NDIlib_v4* _ndiLib;
@@ -118,7 +118,8 @@ private:
 bool ptz_presets_property_modified(void *priv, obs_properties_t *props,
 		       obs_property_t *property, obs_data_t *settings )
 {
-	bool changed = false;
+	//bool changed = false;
+	(void)props;
 	PresetButton *button = static_cast<PresetButton*>(priv);
     const char* property_name = obs_property_name(property);
     const char* value = obs_data_get_string(settings, property_name);
@@ -143,7 +144,7 @@ void ptz_presets_hotkey_function(void* priv, obs_hotkey_id id, obs_hotkey_t* hot
 
 	if (pressed) {
 		PresetButton *button = static_cast<PresetButton*>(priv);
-        ptz_preset_button_pressed(button->index);
+        //ptz_preset_button_pressed(button->index);
     }
 }
 /**
