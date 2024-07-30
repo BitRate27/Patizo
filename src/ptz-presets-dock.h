@@ -291,51 +291,45 @@ private:
 
     void loadButtonNames(const QString &ndiName)
     {
-	    QString filePath = getConfigFilePath() + ndiName + ".json";
-		populateDefaultButtonNames();
-	    if (!(ndiName == obs_module_text("PatizoPlugin.Devices.OnProgram")) &&
-               !(ndiName == obs_module_text("PatizoPlugin.Devices.NotSupported"))) {
-			QFile file(filePath);
-			if (file.open(QIODevice::ReadOnly)) {
-				QByteArray saveData = file.readAll();
-				QJsonDocument loadDoc(
-					QJsonDocument::fromJson(saveData));
-				_buttonNames = loadDoc.object();
-				file.close();
-			}
+        QString filePath = getConfigFilePath() + "settings.json";
+        _buttonNames = QJsonObject();
+      
+        QFile file(filePath);
+        if (file.open(QIODevice::ReadOnly)) {
+            QByteArray saveData = file.readAll();
+            QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
+            QJsonObject allButtonNames = loadDoc.object();
+            if (allButtonNames.contains(ndiName)) {
+                _buttonNames = allButtonNames.value(ndiName).toObject();
+            }
+            file.close();
         }
     }
 
     void saveButtonNames(const QString &ndiName)
     {
-	    if ((ndiName ==
-		 obs_module_text("PatizoPlugin.Devices.OnProgram")) ||
-		(ndiName ==
-		 obs_module_text("PatizoPlugin.Devices.NotSupported")))
-		    return;
+        QString filePath = getConfigFilePath() + "settings.json";
+        if (filePath.isEmpty()) {
+            blog(LOG_WARNING, "Failed to get config path for saving PTZ preset names");
+            return;
+        }
 
-	    QString filePath = getConfigFilePath() + ndiName + ".json";
-	    if (filePath.isEmpty()) {
-		    blog(LOG_WARNING,
-			 "Failed to get config path for saving PTZ preset names");
-		    return;
-	    }
+        QDir().mkpath(QFileInfo(filePath).path());
+        QFile file(filePath);
+        QJsonObject allButtonNames;
+        if (file.open(QIODevice::ReadOnly)) {
+            QByteArray saveData = file.readAll();
+            QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
+            allButtonNames = loadDoc.object();
+            file.close();
+        }
 
-	    QDir().mkpath(QFileInfo(filePath).path());
-	    QFile file(filePath);
-	    if (file.open(QIODevice::WriteOnly)) {
-		    QJsonDocument saveDoc(_buttonNames);
-		    file.write(saveDoc.toJson());
-		    file.close();
-	    } else {
-		    blog(LOG_WARNING,
-			 "Failed to open file for writing PTZ preset names");
-	    }
-    }
+        allButtonNames[ndiName] = _buttonNames;
 
-	void populateDefaultButtonNames() {
-        for (int i = 0; i < _nrows * _ncols; ++i) {
-            _buttons[i]->setText(QString("Preset %1").arg(i + 1));
+        if (file.open(QIODevice::WriteOnly)) {
+            QJsonDocument saveDoc(allButtonNames);
+            file.write(saveDoc.toJson());
+            file.close();
         }
     }
 
