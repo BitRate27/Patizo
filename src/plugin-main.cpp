@@ -28,7 +28,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "ptz-controller.h"
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("ndi-dock", "en-US")
+OBS_MODULE_USE_DEFAULT_LOCALE("patizo", "en-US")
 
 const NDIlib_v5 *load_ndilib();
 NDIPTZDeviceManager *g_ndiptz;
@@ -38,7 +38,7 @@ QLibrary *loaded_lib = nullptr;
 
 NDIlib_find_instance_t ndi_finder = nullptr;
 bool obs_module_load(void) {
-
+	
     g_ndiLib = load_ndilib();
 	if (!g_ndiLib) {
 		blog(LOG_ERROR,

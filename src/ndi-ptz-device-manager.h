@@ -13,8 +13,7 @@ struct recv_info_t {
     NDIlib_recv_instance_t recv;
     ViscaAPI visca;
 };
-typedef std::function<void(const std::map<std::string, recv_info_t>&)> 
-    RecvsChangedCallback;
+typedef std::function<void()> RecvsChangedCallback;
 
 class NDIPTZDeviceManager {
 public:

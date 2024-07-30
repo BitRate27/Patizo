@@ -49,6 +49,28 @@ void NDIPTZDeviceManager::unregisterRecvsChangedCallback(size_t callbackId) {
 
 void NDIPTZDeviceManager::onSceneChanged()
 {
+    // Function to collect NDI names from a given scene
+    auto collectNDINamesFromScene = [this](obs_source_t* scene_source) {
+        auto scene = obs_scene_from_source(scene_source);
+        return createListOfNDINames(scene);
+    };
+
+    // Get all scenes
+    obs_frontend_source_list source_list = {0};
+    std::vector<std::string> all_ndinames;
+	obs_frontend_get_scenes(&source_list);
+    for (size_t i = 0; i < source_list.sources.num; ++i) {
+        obs_source_t *source = source_list.sources.array[i];
+        if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE) {
+            std::vector<std::string> scene_ndinames = collectNDINamesFromScene(source);
+            all_ndinames.insert(all_ndinames.end(), scene_ndinames.begin(), scene_ndinames.end());
+        }
+    }
+
+    obs_frontend_source_list_free(&source_list);
+
+	updateRecvInfo(_ndiLib, all_ndinames, _recvs);
+
 	obs_source_t *preview_source = obs_frontend_get_current_preview_scene();
 
 	auto preview_scene = obs_scene_from_source(preview_source);
@@ -61,7 +83,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 
 	if ((preview_source != nullptr) && (preview_ndinames.size() == 0)) {
 		_current = obs_module_text(
-			"NDIPlugin.PTZPresetsDock.NotSupported");
+			"PatizoPlugin.Devices.NotSupported");
 		return;
 	}
 
@@ -72,8 +94,6 @@ void NDIPTZDeviceManager::onSceneChanged()
 	std::vector<std::string> program_ndinames =
 		createListOfNDINames(program_scene);
 
-	updateRecvInfo(_ndiLib, program_ndinames, _recvs);
-
 	if (preview_source != nullptr) {
 		// Check if preview source also on program
 		for (const std::string &name : preview_ndinames) {
@@ -81,7 +101,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 					    program_ndinames.end(), name);
 			if (it != program_ndinames.end()) {
 				_current = obs_module_text(
-					"NDIPlugin.PTZPresetsDock.OnProgram");
+					"PatizoPlugin.Devices.OnProgram");
 				return;
 			}
 		}
@@ -99,7 +119,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 		_current = ndi_name;
 	} else {
 		_current = obs_module_text(
-			"NDIPlugin.PTZPresetsDock.NotSupported");
+			"PatizoPlugin.Devices.NotSupported");
 	}
 };
 
@@ -206,7 +226,7 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
     if (changed) {
         for (const auto& callback : _recvsChangedCallbacks) {
             if (callback) {  // Check if the callback is valid
-                callback(recvs);
+                callback();
             }
         }
     }
