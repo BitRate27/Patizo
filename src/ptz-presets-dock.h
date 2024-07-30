@@ -33,12 +33,12 @@
 #define PROP_PRESET "preset%1"
 #define PROP_NPRESETS 9
 #define MAX_PRESET_NAME_LENGTH 12
-class PresetButton : public QWidget {
+class PresetButton : public QPushButton {
     Q_OBJECT
 
 public:
     PresetButton(QWidget *parent_, int index_, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager)
-        : QWidget(parent_), index(index_), _ndiLib(ndiLib), _manager(manager)
+        : QPushButton(parent_), index(index_), _ndiLib(ndiLib), _manager(manager)
     {
         QVBoxLayout *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
@@ -130,7 +130,10 @@ public:
         _ndiLib(ndiLib), _manager(manager)
     {
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        
+	    _label = new QLabel("");
+	    _label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	    mainLayout->addWidget(_label);
+        /*
         QHBoxLayout *topLayout = new QHBoxLayout();
         _comboBox = new QComboBox(this);
         _comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -141,7 +144,7 @@ public:
         topLayout->addWidget(_toggleButton);
 
         mainLayout->addLayout(topLayout);
-
+        */
         QGridLayout *grid = new QGridLayout();
         grid->setSpacing(5);  // Add some spacing between buttons
         mainLayout->addLayout(grid);
@@ -164,15 +167,27 @@ public:
 
         // Allow the widget to expand
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        /*
         connect(_comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
 		this, &PTZPresetsWidget::handleComboBoxChange);
+        */
 
         // Register the callback with the manager
         _callbackid = _manager->registerRecvsChangedCallback([this]() {
-            populateComboBox();
-        });
 
-        loadButtonNames(_comboBox->currentText());
+            if (_manager->getCurrentPreviewStatus() == 
+                NDIPTZDeviceManager::PreviewStatus::OK) {
+                _label->setText(_manager->getCurrent().c_str());
+		        loadButtonNames(_manager->getCurrent().c_str());
+            }
+            else if (_manager->getCurrentPreviewStatus() == 
+                NDIPTZDeviceManager::PreviewStatus::OnProgram) {
+                _label->setText(obs_module_text("PatizoPlugin.Devices.OnProgram"));
+            } else {
+                _label->setText(obs_module_text("PatizoPlugin.Devices.NotSupported"));
+            }
+        });
     }
 
     ~PTZPresetsWidget() {
@@ -186,8 +201,11 @@ protected:
 
         QPainter painter(this);
 
+        bool enabled = (_manager->getCurrentPreviewStatus() == 
+            NDIPTZDeviceManager::PreviewStatus::OK);
+
         for (int b = 0; b < PROP_NPRESETS; ++b) {
-            if (_manager->getCurrent() != "") {
+		    if (enabled) {
                 _buttons[b]->setEnabled(true);
                 if (_buttonNames.contains(QString::number(b+1))) {
                     _buttons[b]->setText(_buttonNames[QString::number(b+1)].toString());
@@ -209,11 +227,12 @@ protected:
 
 	void showEvent(QShowEvent *event) override {
         QWidget::showEvent(event);
-        populateComboBox();
+        //populateComboBox();
     }
 
 
 private:
+    QLabel *_label;
     QComboBox *_comboBox;
 	QCheckBox *_toggleButton;
     const NDIlib_v4* _ndiLib;
@@ -226,8 +245,11 @@ private:
 
     void handleNameChanged(int buttonIndex, const QString &newName) {
         _buttonNames[QString::number(buttonIndex + 1)] = newName;
-		QString selectedNdiName = _comboBox->itemText(_comboBox->currentIndex());
-        saveButtonNames(selectedNdiName);
+		//Qring selectedNdiName = _comboBox->itemText(_comboBox->currentIndex());
+        if (_manager->getCurrentPreviewStatus() == 
+            NDIPTZDeviceManager::PreviewStatus::OK) {
+            saveButtonNames(QString::fromStdString(_manager->getCurrent()));
+        }
     }
 
 	QStringList convertToQStringList(const std::vector<std::string> &vec) {
@@ -271,17 +293,27 @@ private:
     {
 	    QString filePath = getConfigFilePath() + ndiName + ".json";
 		populateDefaultButtonNames();
-	    QFile file(filePath);
-	    if (file.open(QIODevice::ReadOnly)) {
-		    QByteArray saveData = file.readAll();
-		    QJsonDocument loadDoc(QJsonDocument::fromJson(saveData));
-		    _buttonNames = loadDoc.object();
-		    file.close();
-	    }
+	    if (!(ndiName == obs_module_text("PatizoPlugin.Devices.OnProgram")) &&
+               !(ndiName == obs_module_text("PatizoPlugin.Devices.NotSupported"))) {
+			QFile file(filePath);
+			if (file.open(QIODevice::ReadOnly)) {
+				QByteArray saveData = file.readAll();
+				QJsonDocument loadDoc(
+					QJsonDocument::fromJson(saveData));
+				_buttonNames = loadDoc.object();
+				file.close();
+			}
+        }
     }
 
     void saveButtonNames(const QString &ndiName)
     {
+	    if ((ndiName ==
+		 obs_module_text("PatizoPlugin.Devices.OnProgram")) ||
+		(ndiName ==
+		 obs_module_text("PatizoPlugin.Devices.NotSupported")))
+		    return;
+
 	    QString filePath = getConfigFilePath() + ndiName + ".json";
 	    if (filePath.isEmpty()) {
 		    blog(LOG_WARNING,

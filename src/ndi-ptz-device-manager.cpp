@@ -82,8 +82,9 @@ void NDIPTZDeviceManager::onSceneChanged()
 	updateRecvInfo(_ndiLib, preview_ndinames, _recvs);
 
 	if ((preview_source != nullptr) && (preview_ndinames.size() == 0)) {
-		_current = obs_module_text(
-			"PatizoPlugin.Devices.NotSupported");
+		_current = "";		
+		_currentPreviewStatus = PreviewStatus::NotSupported;
+		notifyCallbacks();
 		return;
 	}
 
@@ -100,8 +101,9 @@ void NDIPTZDeviceManager::onSceneChanged()
 			auto it = std::find(program_ndinames.begin(),
 					    program_ndinames.end(), name);
 			if (it != program_ndinames.end()) {
-				_current = obs_module_text(
-					"PatizoPlugin.Devices.OnProgram");
+				_currentPreviewStatus = PreviewStatus::OnProgram;
+				_current = "";
+				notifyCallbacks();
 				return;
 			}
 		}
@@ -117,10 +119,12 @@ void NDIPTZDeviceManager::onSceneChanged()
 
 	if (ndi_name != "") {
 		_current = ndi_name;
+		_currentPreviewStatus = PreviewStatus::OK;
 	} else {
-		_current = obs_module_text(
-			"PatizoPlugin.Devices.NotSupported");
+		_current = "";
+		_currentPreviewStatus = PreviewStatus::NotSupported;
 	}
+	notifyCallbacks();
 };
 
 void NDIPTZDeviceManager::closeAllConnections()

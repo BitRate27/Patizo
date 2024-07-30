@@ -27,18 +27,33 @@ public:
     std::vector<std::string> getNDINames();
     size_t registerRecvsChangedCallback(RecvsChangedCallback callback);
     void unregisterRecvsChangedCallback(size_t callbackId);
+    enum class PreviewStatus {
+        OK,
+        OnProgram,
+        NotSupported
+    };
+    PreviewStatus getCurrentPreviewStatus() const { 
+        return _currentPreviewStatus; 
+    };
 private:
     std::map<std::string, recv_info_t> _recvs;
     std::vector<RecvsChangedCallback> _recvsChangedCallbacks;
     const NDIlib_v4* _ndiLib;
     std::string _current = "";
-
+    // Add the private member variable
+    PreviewStatus _currentPreviewStatus = PreviewStatus::NotSupported;
     // Helper methods
     void updateRecvInfo(const NDIlib_v4* ndiLib, 
                     const std::vector<std::string> name_list, 
                     std::map<std::string, recv_info_t>& recvs);
-    std::vector<std::string> createListOfNDINames(void* scene);
-
+    void notifyCallbacks()
+    {
+	    for (const auto &callback : _recvsChangedCallbacks) {
+		    if (callback) { // Check if the callback is valid
+			    callback();
+		    }
+	    }
+    };
     void closeAllConnections();
     std::vector<std::string> createListOfNDINames(obs_scene_t *scene);
 };
