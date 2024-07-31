@@ -247,16 +247,16 @@ private:
 	const NDIlib_v4* _ndiLib;
 	NDIPTZDeviceManager* _manager;
 };
-PTZControllerWidget *g_dialog;
+PTZControllerWidget *g_controllerdialog;
 void ptz_controller_init(const NDIlib_v4* ndiLib, NDIPTZDeviceManager *manager)
 {
     blog(LOG_INFO, "[patizo] obs_module_load: ptz_controller_init");
 
-    g_dialog = new PTZControllerWidget(ndiLib, manager);
+    g_controllerdialog = new PTZControllerWidget(ndiLib, manager);
 
     obs_frontend_add_dock_by_id(
-	    obs_module_text("PTZController"),
-	    obs_module_text("PTZ Controller"), g_dialog);
+	    obs_module_text("PatizoController"),
+	    obs_module_text("Patizo Controller"), g_controllerdialog);
 
     blog(LOG_INFO, "[patizo] obs_module_load: PTZ Controller Dock added");
 };

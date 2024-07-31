@@ -1,6 +1,5 @@
-Doesn't disable buttons when Not found or on program
-Put all NDI json files in one settings file for whole plugin
-
+Remove linux build action
+Add entry on Tools menu for all Patizo settings
 Handle source deleted
 Register callback to update the sources_list
 Video won't captureFrames (100ms timeout)
