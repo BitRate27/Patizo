@@ -55,8 +55,8 @@ bool obs_module_load(void) {
 
 	ptz_presets_init(g_ndiLib, g_ndiptz);
 	blog(LOG_INFO, "[patizo] Patizo presets dock added");
-	ptz_controller_init(g_ndiLib, g_ndiptz);
-	blog(LOG_INFO, "[patizo] Patizo controller dock added");
+	//ptz_controller_init(g_ndiLib, g_ndiptz);
+	//blog(LOG_INFO, "[patizo] Patizo controller dock added");
     return true;
 }
 

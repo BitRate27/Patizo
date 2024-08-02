@@ -1,8 +1,7 @@
-Remove linux build action
-How to trigger package build
+Up version number in code
+If editing text when scene change, save changes and exit edit, 
+    then switch scene
 Add error for no NDI installed
-Run clang-format on windows to see what is wrong
--fPIC needed for build of visca27.o file
 Add entry on Tools menu for all Patizo settings
 Handle source deleted
 Register callback to update the sources_list
