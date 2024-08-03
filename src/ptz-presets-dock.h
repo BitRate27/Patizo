@@ -1,16 +1,34 @@
 #pragma once
+#include <obs-module.h>
+#include <obs.h>
+#include <obs-properties.h>
+#include <chrono>
+#include <obs-frontend-api.h>
+#include "util/platform.h"
+#include <pthread.h>
+#include <qgridlayout.h>
+#include <qlabel.h>
+#include <QMouseEvent>
+#include <qcombobox.h>
+#include <qpainter.h>
+#include <qpushbutton.h>
+#include <thread>
+#include <qlineedit.h>
+#include <obs-source.h>
+#include <string>
+#include <QInputDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QFile>
 #include <QDir>
 #include <QApplication>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QCheckBox>
 #include <QTimer>
-#include <QPushButton>
-#include <QSizePolicy>
-#include <QLineEdit>
-#include <qelapsedtimer.h>
 #include "ndi-ptz-device-manager.h"
 #include <Processing.NDI.Lib.h>
+#include <qelapsedtimer.h>
 
 #define PROP_PRESET "preset%1"
 #define PROP_NPRESETS 9
