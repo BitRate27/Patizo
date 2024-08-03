@@ -67,5 +67,5 @@ void ptz_presets_init(const NDIlib_v4 *ndiLib, NDIPTZDeviceManager *manager)
 	   "PatizoPresets",
 	    obs_module_text("PatizoPlugin.PresetsDock.Title"), g_dialog);
 
-	blog(LOG_INFO, "[obs-ndi] obs_module_load: Patizo Presets Dock added");
+	blog(LOG_INFO, "[patizo] obs_module_load: Patizo Presets Dock added");
 }
