@@ -1,34 +1,16 @@
 #pragma once
-#include <obs-module.h>
-#include <obs.h>
-#include <obs-properties.h>
-#include <chrono>
-#include <obs-frontend-api.h>
-#include "util/platform.h"
-#include <pthread.h>
-#include <qgridlayout.h>
-#include <qlabel.h>
-#include <QMouseEvent>
-#include <qcombobox.h>
-#include <qpainter.h>
-#include <qpushbutton.h>
-#include <thread>
-#include <qlineedit.h>
-#include <obs-source.h>
-#include <string>
-#include <QInputDialog>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QFile>
 #include <QDir>
 #include <QApplication>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QCheckBox>
 #include <QTimer>
+#include <QPushButton>
+#include <QSizePolicy>
+#include <QLineEdit>
+#include <qelapsedtimer.h>
 #include "ndi-ptz-device-manager.h"
 #include <Processing.NDI.Lib.h>
-#include <qelapsedtimer.h>
 
 #define PROP_PRESET "preset%1"
 #define PROP_NPRESETS 9
@@ -75,6 +57,14 @@ signals:
     void doubleClicked();
     void nameChanged(const QString &newName);
 
+protected:
+    void focusOutEvent(QFocusEvent *event) override {
+        if (_lineEdit->isVisible()) {
+            _lineEdit->hide();
+            _button->setText(_lineEdit->text());
+        }
+        QPushButton::focusOutEvent(event);
+    }
 private:
     QPushButton *_button;
     QLineEdit *_lineEdit;
@@ -133,18 +123,7 @@ public:
 	    _label = new QLabel("");
 	    _label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 	    mainLayout->addWidget(_label);
-        /*
-        QHBoxLayout *topLayout = new QHBoxLayout();
-        _comboBox = new QComboBox(this);
-        _comboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        populateComboBox();
-        topLayout->addWidget(_comboBox);
 
-        _toggleButton = new QCheckBox("Follow preview", this);
-        topLayout->addWidget(_toggleButton);
-
-        mainLayout->addLayout(topLayout);
-        */
         QGridLayout *grid = new QGridLayout();
         grid->setSpacing(5);  // Add some spacing between buttons
         mainLayout->addLayout(grid);
@@ -167,11 +146,6 @@ public:
 
         // Allow the widget to expand
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-        /*
-        connect(_comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
-		this, &PTZPresetsWidget::handleComboBoxChange);
-        */
 
         // Register the callback with the manager
         _callbackid = _manager->registerRecvsChangedCallback([this]() {
@@ -245,7 +219,7 @@ private:
 
     void handleNameChanged(int buttonIndex, const QString &newName) {
         _buttonNames[QString::number(buttonIndex + 1)] = newName;
-		//Qring selectedNdiName = _comboBox->itemText(_comboBox->currentIndex());
+
         if (_manager->getCurrentPreviewStatus() == 
             NDIPTZDeviceManager::PreviewStatus::OK) {
             saveButtonNames(QString::fromStdString(_manager->getCurrent()));
