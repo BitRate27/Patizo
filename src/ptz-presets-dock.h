@@ -46,15 +46,16 @@ public:
 
         _button = new QPushButton(this);
         _button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        _button->setText("");
-        
+        _button->setFocusPolicy(Qt::NoFocus);
+
         _lineEdit = new QLineEdit(this);
         _lineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         _lineEdit->setAlignment(Qt::AlignCenter);
         _lineEdit->hide();
         
-        layout->addWidget(_button);
+        layout->addWidget(_button,1);
         layout->addWidget(_lineEdit);
+        setLayout(layout);
         
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         setMinimumSize(60, 60);  // Set a minimum size to ensure readability
@@ -76,13 +77,15 @@ signals:
     void nameChanged(const QString &newName);
 
 protected:
+
     void focusOutEvent(QFocusEvent *event) override {
         if (_lineEdit->isVisible()) {
             _lineEdit->hide();
             _button->setText(_lineEdit->text());
         }
-        QPushButton::focusOutEvent(event);
+        QWidget::focusOutEvent(event);
     }
+
 private:
     QPushButton *_button;
     QLineEdit *_lineEdit;
@@ -143,7 +146,6 @@ public:
 	    mainLayout->addWidget(_label);
 
         QGridLayout *grid = new QGridLayout();
-        grid->setSpacing(5);  // Add some spacing between buttons
         mainLayout->addLayout(grid);
 
         _nrows = 3;
@@ -164,6 +166,7 @@ public:
 
         // Allow the widget to expand
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        setLayout(mainLayout);
 
         // Register the callback with the manager
         _callbackid = _manager->registerRecvsChangedCallback([this]() {
