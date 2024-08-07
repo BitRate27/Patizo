@@ -188,8 +188,7 @@ public:
                 _buttons[ndx] = new PresetButton(this, ndx + 1, _ndiLib, _manager);
 
                 grid->addWidget(_buttons[ndx], i, j);
-                obs_hotkey_id hotkeyId = 
-					obs_hotkey_register_frontend(QString("PatizoPreset%1").arg(ndx+1).toUtf8(),
+                obs_hotkey_register_frontend(QString("PatizoPreset%1").arg(ndx+1).toUtf8(),
 												QString("Patizo Preset %1 Recall").arg(ndx+1).toUtf8(), 
 												ptz_presets_hotkey_function, 
 												(void*)_buttons[ndx]);
