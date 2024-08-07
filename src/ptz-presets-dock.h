@@ -63,7 +63,7 @@ public:
         setAutoFillBackground(true);
         show();
        // connect(this, &QLabel::clicked, this, &PresetButton::handleClick);
-        connect(_lineEdit, &QLineEdit::editingFinished, this, &PresetButton::finishEditing);
+       connect(_lineEdit, &QLineEdit::editingFinished, this, &PresetButton::finishEditing);
     }
 
     void setText(const QString &text) {
@@ -82,8 +82,7 @@ protected:
 
     void focusOutEvent(QFocusEvent *event) override {
         if (_lineEdit->isVisible()) {
-            _lineEdit->hide();
-            _label->setText(_lineEdit->text());
+            finishEditing();
         }
         QWidget::focusOutEvent(event);
     }
@@ -100,40 +99,32 @@ protected:
     
     bool event(QEvent *event) override {
         if (event->type() == QEvent::Enter) {
-            _backgroundColor = Qt::gray; // Change background color when mouse enters
+            _backgroundColor = palette().color(QPalette::Highlight);
             update(); // Trigger a repaint
         } else if (event->type() == QEvent::Leave) {
-            _backgroundColor = Qt::darkGray; // Change background color back when mouse leaves
+            _backgroundColor = palette().color(QPalette::Window);
             update(); // Trigger a repaint
+        } else if (event->type() == QEvent::MouseButtonPress) {
+            handleSingleClick();
+        } else if (event->type() == QEvent::MouseButtonDblClick)
+        {
+            startEditing(); 
         }
+        
         return QWidget::event(event);
     }
 
 private:
     QLabel *_label;
     QLineEdit *_lineEdit;
-    QElapsedTimer _clickTimer;
     int index;
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
-    QColor _backgroundColor = Qt::darkGray; // Initial background color
-    void handleClick() {
-        if (_clickTimer.isValid() && _clickTimer.elapsed() < QApplication::doubleClickInterval()) {
-            emit doubleClicked();
-            _clickTimer.invalidate();
-            startEditing();
-        } else {
-            _clickTimer.start();
-            QTimer::singleShot(QApplication::doubleClickInterval(), this, &PresetButton::handleSingleClick);
-        }
-    }
+    QColor _backgroundColor = palette().color(QPalette::Window);
 
     void handleSingleClick() {
-        if (_clickTimer.isValid()) {
-            auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
-            _ndiLib->recv_ptz_recall_preset(recv, index, 5);
-            _clickTimer.invalidate();
-        }
+        auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
+        _ndiLib->recv_ptz_recall_preset(recv, index, 5);
     }
 
     void startEditing() {
@@ -145,6 +136,9 @@ private:
     }
 
     void finishEditing() {
+        qDebug() << "Finishing editing";
+        if (!_lineEdit->isVisible()) return;
+
         QString newName = _lineEdit->text();
         if (newName.length() > MAX_PRESET_NAME_LENGTH) {
             newName = newName.left(MAX_PRESET_NAME_LENGTH);
