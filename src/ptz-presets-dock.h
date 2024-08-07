@@ -32,7 +32,6 @@
 
 #define PROP_PRESET "preset%1"
 #define PROP_NPRESETS 9
-#define MAX_PRESET_NAME_LENGTH 12
 class PresetButton : public QWidget {
     Q_OBJECT
 
@@ -45,7 +44,8 @@ public:
         layout->setSpacing(0);
 
         _label = new QLabel(this);
-        _label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        _label->setWordWrap(true);
+        _label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
         _label->setAlignment(Qt::AlignCenter);
         _label->setAttribute(Qt::WA_TranslucentBackground, true); // Set background to be transparent
 
@@ -62,8 +62,8 @@ public:
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         setAutoFillBackground(true);
         show();
-       // connect(this, &QLabel::clicked, this, &PresetButton::handleClick);
-       connect(_lineEdit, &QLineEdit::editingFinished, this, &PresetButton::finishEditing);
+        // connect(this, &QLabel::clicked, this, &PresetButton::handleClick);
+        connect(_lineEdit, &QLineEdit::editingFinished, this, &PresetButton::finishEditing);
     }
 
     void setText(const QString &text) {
@@ -93,21 +93,20 @@ protected:
 
         QPainter painter(this);
         painter.setPen(_backgroundColor);
-        painter.setBrush(_backgroundColor); // Set the brush to fill the rectangle with blue color
-        painter.drawRect(0, 0, width(), height()); // Draw and fill the rectangle
+        painter.setBrush(_backgroundColor); 
+        painter.drawRect(2, 2, width()-4, height()-4); // Draw and fill the rectangle
     }
     
     bool event(QEvent *event) override {
         if (event->type() == QEvent::Enter) {
             _backgroundColor = palette().color(QPalette::Highlight);
-            update(); // Trigger a repaint
+            update();
         } else if (event->type() == QEvent::Leave) {
-            _backgroundColor = palette().color(QPalette::Window);
-            update(); // Trigger a repaint
+            _backgroundColor = palette().color(QPalette::Button);
+            update(); 
         } else if (event->type() == QEvent::MouseButtonPress) {
             handleSingleClick();
-        } else if (event->type() == QEvent::MouseButtonDblClick)
-        {
+        } else if (event->type() == QEvent::MouseButtonDblClick) {
             startEditing(); 
         }
         
@@ -120,7 +119,7 @@ private:
     int index;
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
-    QColor _backgroundColor = palette().color(QPalette::Window);
+    QColor _backgroundColor = palette().color(QPalette::Button);
 
     void handleSingleClick() {
         auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
@@ -136,13 +135,9 @@ private:
     }
 
     void finishEditing() {
-        qDebug() << "Finishing editing";
         if (!_lineEdit->isVisible()) return;
 
         QString newName = _lineEdit->text();
-        if (newName.length() > MAX_PRESET_NAME_LENGTH) {
-            newName = newName.left(MAX_PRESET_NAME_LENGTH);
-        }
         _label->setText(newName);
         _lineEdit->hide();
         _label->show();
@@ -166,7 +161,6 @@ public:
 
         QGridLayout *grid = new QGridLayout();
         _gridWidget = new QWidget(this);        
-        grid->setSpacing(2);
         _gridWidget->setLayout(grid);
         _gridWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
