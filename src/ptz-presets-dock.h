@@ -33,43 +33,45 @@
 #define PROP_PRESET "preset%1"
 #define PROP_NPRESETS 9
 #define MAX_PRESET_NAME_LENGTH 12
-class PresetButton : public QPushButton {
+class PresetButton : public QWidget {
     Q_OBJECT
 
 public:
     PresetButton(QWidget *parent_, int index_, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager)
-        : QPushButton(parent_), index(index_), _ndiLib(ndiLib), _manager(manager)
+        : QWidget(parent_), index(index_), _ndiLib(ndiLib), _manager(manager)
     {
         QVBoxLayout *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(0);
 
-        _button = new QPushButton(this);
-        _button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        _button->setFocusPolicy(Qt::NoFocus);
+        _label = new QLabel(this);
+        _label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        _label->setAlignment(Qt::AlignCenter);
+        _label->setAttribute(Qt::WA_TranslucentBackground, true); // Set background to be transparent
+
 
         _lineEdit = new QLineEdit(this);
         _lineEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         _lineEdit->setAlignment(Qt::AlignCenter);
         _lineEdit->hide();
         
-        layout->addWidget(_button,1);
+        layout->addWidget(_label);
         layout->addWidget(_lineEdit);
         setLayout(layout);
-        
+
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        setMinimumSize(60, 60);  // Set a minimum size to ensure readability
-        
-        connect(_button, &QPushButton::clicked, this, &PresetButton::handleClick);
+        setAutoFillBackground(true);
+        show();
+       // connect(this, &QLabel::clicked, this, &PresetButton::handleClick);
         connect(_lineEdit, &QLineEdit::editingFinished, this, &PresetButton::finishEditing);
     }
 
     void setText(const QString &text) {
-        _button->setText(text);
+        _label->setText(text);
     }
 
     QString text() const {
-        return _button->text();
+        return _label->text();
     }
 
 signals:
@@ -81,19 +83,40 @@ protected:
     void focusOutEvent(QFocusEvent *event) override {
         if (_lineEdit->isVisible()) {
             _lineEdit->hide();
-            _button->setText(_lineEdit->text());
+            _label->setText(_lineEdit->text());
         }
         QWidget::focusOutEvent(event);
     }
 
+    void paintEvent(QPaintEvent *event) override
+    {        
+        if (!event) return;
+
+        QPainter painter(this);
+        painter.setPen(_backgroundColor);
+        painter.setBrush(_backgroundColor); // Set the brush to fill the rectangle with blue color
+        painter.drawRect(0, 0, width(), height()); // Draw and fill the rectangle
+    }
+    
+    bool event(QEvent *event) override {
+        if (event->type() == QEvent::Enter) {
+            _backgroundColor = Qt::gray; // Change background color when mouse enters
+            update(); // Trigger a repaint
+        } else if (event->type() == QEvent::Leave) {
+            _backgroundColor = Qt::darkGray; // Change background color back when mouse leaves
+            update(); // Trigger a repaint
+        }
+        return QWidget::event(event);
+    }
+
 private:
-    QPushButton *_button;
+    QLabel *_label;
     QLineEdit *_lineEdit;
     QElapsedTimer _clickTimer;
     int index;
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
-
+    QColor _backgroundColor = Qt::darkGray; // Initial background color
     void handleClick() {
         if (_clickTimer.isValid() && _clickTimer.elapsed() < QApplication::doubleClickInterval()) {
             emit doubleClicked();
@@ -114,8 +137,8 @@ private:
     }
 
     void startEditing() {
-        _lineEdit->setText(_button->text());
-        _button->hide();
+        _lineEdit->setText(_label->text());
+        _label->hide();
         _lineEdit->show();
         _lineEdit->setFocus();
         _lineEdit->selectAll();
@@ -126,9 +149,9 @@ private:
         if (newName.length() > MAX_PRESET_NAME_LENGTH) {
             newName = newName.left(MAX_PRESET_NAME_LENGTH);
         }
-        _button->setText(newName);
+        _label->setText(newName);
         _lineEdit->hide();
-        _button->show();
+        _label->show();
         emit nameChanged(newName);
     }
 };
@@ -143,10 +166,17 @@ public:
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
 	    _label = new QLabel("");
 	    _label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        _label->setMinimumHeight(_label->fontMetrics().height());  // Set fixed height to one line height
+        _label->setMaximumHeight(_label->fontMetrics().height());
 	    mainLayout->addWidget(_label);
 
         QGridLayout *grid = new QGridLayout();
-        mainLayout->addLayout(grid);
+        _gridWidget = new QWidget(this);        
+        grid->setSpacing(2);
+        _gridWidget->setLayout(grid);
+        _gridWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        mainLayout->addWidget(_gridWidget);
 
         _nrows = 3;
         _ncols = 3;
@@ -156,12 +186,21 @@ public:
             for (int j = 0; j < _ncols; ++j) {
                 int ndx = i * _ncols + j;
                 _buttons[ndx] = new PresetButton(this, ndx + 1, _ndiLib, _manager);
+
                 grid->addWidget(_buttons[ndx], i, j);
                 
                 connect(_buttons[ndx], &PresetButton::nameChanged, this, [this, ndx](const QString &newName) {
                     handleNameChanged(ndx, newName);
                 });
             }
+        }
+
+        // Set stretch factors for rows and columns to ensure equal expansion
+        for (int i = 0; i < _nrows; ++i) {
+            grid->setRowStretch(i, 1);
+        }
+        for (int j = 0; j < _ncols; ++j) {
+            grid->setColumnStretch(j, 1);
         }
 
         // Allow the widget to expand
@@ -205,19 +244,13 @@ protected:
                 if (_buttonNames.contains(QString::number(b+1))) {
                     _buttons[b]->setText(_buttonNames[QString::number(b+1)].toString());
                 } else {
-                    _buttons[b]->setText(QString(obs_module_text("PatizoPlugin.PresetsDock.Default")).arg(b+1).toUtf8());
+                    _buttons[b]->setText(QString("Preset %1").arg(b+1).toUtf8());
                 }
             } else {
                 _buttons[b]->setEnabled(false);
                 _buttons[b]->setText("");
             }
         }
-    }
-
-    void resizeEvent(QResizeEvent *event) override
-    {
-        QWidget::resizeEvent(event);
-        updateButtonFontSizes();
     }
 
 	void showEvent(QShowEvent *event) override {
@@ -233,6 +266,7 @@ private:
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
     PresetButton **_buttons;
+    QWidget *_gridWidget;
     int _ncols;
     int _nrows;
     QJsonObject _buttonNames;
