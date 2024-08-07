@@ -32,6 +32,9 @@
 
 #define PROP_PRESET "preset%1"
 #define PROP_NPRESETS 9
+
+void ptz_presets_hotkey_function(void* priv, obs_hotkey_id id, obs_hotkey_t* hotkey, bool pressed);
+
 class PresetButton : public QWidget {
     Q_OBJECT
 
@@ -72,6 +75,11 @@ public:
 
     QString text() const {
         return _label->text();
+    }
+
+    void recallPreset() {
+        auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
+        _ndiLib->recv_ptz_recall_preset(recv, index, 5);
     }
 
 signals:
@@ -160,7 +168,11 @@ public:
 	    mainLayout->addWidget(_label);
 
         QGridLayout *grid = new QGridLayout();
-        _gridWidget = new QWidget(this);        
+        _gridWidget = new QWidget(this);
+        _gridWidget->setContentsMargins(0, 0, 0, 0); // left, top, right, bottom
+
+        // Set border
+        _gridWidget->setStyleSheet("border: 0px solid black;");    
         _gridWidget->setLayout(grid);
         _gridWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -176,7 +188,11 @@ public:
                 _buttons[ndx] = new PresetButton(this, ndx + 1, _ndiLib, _manager);
 
                 grid->addWidget(_buttons[ndx], i, j);
-                
+                obs_hotkey_id hotkeyId = 
+					obs_hotkey_register_frontend(QString("PatizoPreset%1").arg(ndx+1).toUtf8(),
+												QString("Patizo Preset %1 Recall").arg(ndx+1).toUtf8(), 
+												ptz_presets_hotkey_function, 
+												(void*)_buttons[ndx]);
                 connect(_buttons[ndx], &PresetButton::nameChanged, this, [this, ndx](const QString &newName) {
                     handleNameChanged(ndx, newName);
                 });
@@ -246,7 +262,6 @@ protected:
         //populateComboBox();
     }
 
-
 private:
     QLabel *_label;
     QComboBox *_comboBox;
@@ -266,30 +281,6 @@ private:
         if (_manager->getCurrentPreviewStatus() == 
             NDIPTZDeviceManager::PreviewStatus::OK) {
             saveButtonNames(QString::fromStdString(_manager->getCurrent()));
-        }
-    }
-
-	QStringList convertToQStringList(const std::vector<std::string> &vec) {
-		QStringList qStringList;
-		for (const auto &str : vec) {
-			qStringList.append(QString::fromStdString(str));
-		}
-		return qStringList;
-	}
-
-	void populateComboBox() {
-        std::vector<std::string> receivers = _manager->getNDINames();
-		QStringList qStringList = convertToQStringList(receivers);
-		_comboBox->clear();
-        _comboBox->addItems(qStringList);
-    }
-
-    void updateButtonFontSizes() {
-        for (int i = 0; i < _nrows * _ncols; ++i) {
-            QFont font = _buttons[i]->font();
-            int fontSize = qMin(_buttons[i]->width() / 8, _buttons[i]->height() / 4);
-            font.setPixelSize(fontSize);
-            _buttons[i]->setFont(font);
         }
     }
 
@@ -348,13 +339,6 @@ private:
             file.write(saveDoc.toJson());
             file.close();
         }
-    }
-
-private slots:
-    void handleComboBoxChange(int index)
-    {
-	    QString selectedNdiName = _comboBox->itemText(index);
-	    loadButtonNames(selectedNdiName);
     }
 };
 void ptz_presets_init(const NDIlib_v4 *, NDIPTZDeviceManager *manager);
