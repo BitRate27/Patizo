@@ -216,15 +216,17 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
 {
     bool changed = false;
     for (const std::string& ndi_name : name_list) {
-         auto it = recvs.find(ndi_name);
+        auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
             NDIlib_recv_instance_t recv = getRecv(ndiLib, ndi_name);
             ViscaAPI visca = getViscaAPI(ndiLib, recv);
-	        recv_info_t recv_info = {};
-	        recv_info.recv = recv;
-		    recv_info.visca = visca;
-            recvs[ndi_name] = recv_info;
-            changed = true;
+			if (visca.isConnected() == VOK) {
+	        	recv_info_t recv_info = {};
+	        	recv_info.recv = recv;
+		    	recv_info.visca = visca;
+            	recvs[ndi_name] = recv_info;
+            	changed = true;
+			}
         }
     }
     if (changed) {
