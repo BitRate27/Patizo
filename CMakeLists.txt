@@ -39,8 +39,6 @@ endif()
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE 
 src/plugin-main.cpp
-src/ptz-controller.cpp 
-src/ptz-controller.h
 src/ptz-presets-dock.cpp 
 src/ptz-presets-dock.h
 src/ndi-ptz-device-manager.cpp

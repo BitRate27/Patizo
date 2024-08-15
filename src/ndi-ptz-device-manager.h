@@ -11,7 +11,7 @@
 
 struct recv_info_t {
     NDIlib_recv_instance_t recv;
-    ViscaAPI visca;
+    ViscaAPI *visca;
 };
 typedef std::function<void()> RecvsChangedCallback;
 

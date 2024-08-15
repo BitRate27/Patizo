@@ -131,7 +131,7 @@ void NDIPTZDeviceManager::closeAllConnections()
 {
 	for (auto &recv : _recvs) {
 		_ndiLib->recv_destroy(recv.second.recv);
-		recv.second.visca.disconnectCamera();
+		visca_error_t verr = recv.second.visca->disconnectCamera();
 	}
 	_recvs.clear();
 };
@@ -202,7 +202,7 @@ std::vector<std::string> NDIPTZDeviceManager::createListOfNDINames(obs_scene_t* 
         std::string ndi_name = getNDIName(source);
         if (ndi_name == "") return true;
 
-       
+        blog(LOG_INFO, "[patizo] NDI name: %s, showing: %d", ndi_name.c_str(), obs_source_showing(source));
         if (!obs_source_showing(source)) return true;
         names->push_back(ndi_name);
         return true;
@@ -219,11 +219,13 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
         auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
             NDIlib_recv_instance_t recv = getRecv(ndiLib, ndi_name);
-            ViscaAPI visca = getViscaAPI(ndiLib, recv);
-			if (visca.isConnected() == VOK) {
+			if (recv == nullptr) continue;
+
+            //ViscaAPI visca = getViscaAPI(ndiLib, recv);
+			if (true) { //visca.isConnected() == VOK) {
 	        	recv_info_t recv_info = {};
 	        	recv_info.recv = recv;
-		    	recv_info.visca = visca;
+		    	recv_info.visca = new ViscaAPI();
             	recvs[ndi_name] = recv_info;
             	changed = true;
 			}

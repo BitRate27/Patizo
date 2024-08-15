@@ -25,7 +25,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "plugin-main.h"
 #include "ndi-ptz-device-manager.h"
 #include "ptz-presets-dock.h"
-#include "ptz-controller.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("patizo", "en-US")
@@ -60,8 +59,12 @@ bool obs_module_load(void) {
     return true;
 }
 
-void obs_module_unload() {
+void obs_module_unload() {	
+	ptz_presets_destroy();
     g_ndiLib->destroy();
+	delete g_ndiptz;
+	delete loaded_lib;
+
 }
 
 const NDIlib_v4 *load_ndilib()

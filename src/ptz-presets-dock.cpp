@@ -1,6 +1,6 @@
 #include "ptz-presets-dock.h"
 
-PTZPresetsWidget *g_dialog;
+static PTZPresetsWidget *g_dialog = nullptr;
 
 void ptz_presets_init(const NDIlib_v4 *ndiLib, NDIPTZDeviceManager *manager)
 {
@@ -17,10 +17,17 @@ void ptz_presets_hotkey_function(void* priv, obs_hotkey_id id, obs_hotkey_t* hot
 {
 	(void)id;
 	(void)hotkey;
-	(void)pressed;
 
 	if (pressed) {
 		PresetButton *button = static_cast<PresetButton*>(priv);
         if (button) button->recallPreset();
     }
+}
+void ptz_presets_destroy()
+{
+	if (g_dialog) {
+		delete g_dialog;
+		g_dialog = nullptr;
+	}
+	blog(LOG_INFO, "[patizo] obs_module_unload: Patizo Presets Dock removed");
 }

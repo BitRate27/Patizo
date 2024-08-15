@@ -87,14 +87,13 @@ signals:
     void nameChanged(const QString &newName);
 
 protected:
-
-    void focusOutEvent(QFocusEvent *event) override {
-        if (_lineEdit->isVisible()) {
-            finishEditing();
+    void mousePressEvent(QMouseEvent *event) override {
+        if (event->button() == Qt::LeftButton) {
+            recallPreset();
         }
-        QWidget::focusOutEvent(event);
+        QWidget::mousePressEvent(event);
     }
-
+    
     void paintEvent(QPaintEvent *event) override
     {        
         if (!event) return;
@@ -229,6 +228,7 @@ public:
 
     ~PTZPresetsWidget() {
         delete[] _buttons;
+        _manager->unregisterRecvsChangedCallback(_callbackid);
     }
 
 protected:
@@ -341,3 +341,4 @@ private:
     }
 };
 void ptz_presets_init(const NDIlib_v4 *, NDIPTZDeviceManager *manager);
+void ptz_presets_destroy();
