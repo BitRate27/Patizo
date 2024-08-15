@@ -26,7 +26,6 @@ void ptz_presets_hotkey_function(void* priv, obs_hotkey_id id, obs_hotkey_t* hot
 void ptz_presets_destroy()
 {
 	if (g_dialog) {
-		delete g_dialog;
 		g_dialog = nullptr;
 	}
 	blog(LOG_INFO, "[patizo] obs_module_unload: Patizo Presets Dock removed");

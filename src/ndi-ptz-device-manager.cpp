@@ -132,6 +132,9 @@ void NDIPTZDeviceManager::closeAllConnections()
 	for (auto &recv : _recvs) {
 		_ndiLib->recv_destroy(recv.second.recv);
 		visca_error_t verr = recv.second.visca->disconnectCamera();
+		if (verr != VOK) {
+			blog(LOG_ERROR, "[patizo] Failed to disconnect camera. Error code: %d", verr);
+		}
 	}
 	_recvs.clear();
 };
