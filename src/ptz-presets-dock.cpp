@@ -1,4 +1,5 @@
 #include "ptz-presets-dock.h"
+#include <obs-frontend-api.h>
 
 static PTZPresetsWidget *g_dialog = nullptr;
 

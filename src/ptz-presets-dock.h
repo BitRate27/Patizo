@@ -1,9 +1,6 @@
 #pragma once
 #include <obs-module.h>
-#include <obs.h>
-#include <obs-properties.h>
-#include <chrono>
-#include <obs-frontend-api.h>
+
 #include "util/platform.h"
 #include <pthread.h>
 #include <qgridlayout.h>
@@ -78,8 +75,11 @@ public:
     }
 
     void recallPreset() {
-        auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
+
+        auto recv_info = _manager->getRecvInfo(_manager->getCurrent());
+	    auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
         _ndiLib->recv_ptz_recall_preset(recv, index, 5);
+	    _manager->disconnectRecv(_ndiLib, recv);
     }
 
 signals:
@@ -129,8 +129,10 @@ private:
     QColor _backgroundColor = palette().color(QPalette::Button);
 
     void handleSingleClick() {
-        auto recv = _manager->getRecvInfo(_manager->getCurrent()).recv;
+        auto recv_info = _manager->getRecvInfo(_manager->getCurrent());
+	    auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
         _ndiLib->recv_ptz_recall_preset(recv, index, 5);
+	    _manager->disconnectRecv(_ndiLib, recv);
     }
 
     void startEditing() {

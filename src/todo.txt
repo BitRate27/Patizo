@@ -1,3 +1,7 @@
+Don't create recv until sending preset recall
+Verify supported when initialized, close
+Use low bandwidth
+Add bool for visca supported
 Up version number in code
 If editing text when scene change, save changes and exit edit, 
     then switch scene

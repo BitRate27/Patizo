@@ -10,7 +10,9 @@
 #include "ViscaAPI.h"
 
 struct recv_info_t {
+    std::string ndi_name;
     NDIlib_recv_instance_t recv;
+    bool visca_supported;
     ViscaAPI *visca;
 };
 typedef std::function<void()> RecvsChangedCallback;
@@ -22,6 +24,9 @@ public:
     ~NDIPTZDeviceManager();
 
     recv_info_t getRecvInfo(const std::string &ndi_name);
+    NDIlib_recv_instance_t connectRecv(const NDIlib_v4 *ndiLib,
+				      const std::string &ndi_name);
+    void disconnectRecv(const NDIlib_v4 *ndiLib, NDIlib_recv_instance_t recv);
     std::string getCurrent() const;
     void onSceneChanged();
     std::vector<std::string> getNDINames();
