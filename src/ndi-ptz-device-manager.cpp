@@ -130,10 +130,16 @@ void NDIPTZDeviceManager::onSceneChanged()
 void NDIPTZDeviceManager::closeAllConnections()
 {
 	for (auto &recv : _recvs) {
-		_ndiLib->recv_destroy(recv.second.recv);
-		visca_error_t verr = recv.second.visca->disconnectCamera();
-		if (verr != VOK) {
-			blog(LOG_ERROR, "[patizo] Failed to disconnect camera. Error code: %d", verr);
+		if (recv.second.recv == nullptr)
+			_ndiLib->recv_destroy(recv.second.recv);
+		if (recv.second.visca_supported) {
+			visca_error_t verr =
+				recv.second.visca->disconnectCamera();
+			if (verr != VOK) {
+				blog(LOG_ERROR,
+				     "[patizo] Failed to disconnect camera. Error code: %d",
+				     verr);
+			}
 		}
 	}
 	_recvs.clear();
@@ -147,7 +153,7 @@ static std::string getNDIName(const obs_source_t *source)
 	return obs_data_get_string(data, "ndi_source_name");
 };
 
-static NDIlib_recv_instance_t getRecv(const NDIlib_v4 *ndiLib,
+NDIlib_recv_instance_t NDIPTZDeviceManager::connectRecv(const NDIlib_v4 *ndiLib,
 				      const std::string &ndi_name)
 {
 	NDIlib_recv_instance_t recv = nullptr;
@@ -157,10 +163,18 @@ static NDIlib_recv_instance_t getRecv(const NDIlib_v4 *ndiLib,
 	NDIlib_recv_create_v3_t recv_create_desc;
 	recv_create_desc.source_to_connect_to = selected_source;
 	recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
+	recv_create_desc.bandwidth = NDIlib_recv_bandwidth_lowest;
 
 	recv = ndiLib->recv_create_v3(&recv_create_desc);
 	return recv;
 };
+
+void NDIPTZDeviceManager::disconnectRecv(const NDIlib_v4 *ndiLib,
+					 NDIlib_recv_instance_t recv)
+{
+	ndiLib->recv_destroy(recv);
+};
+
 static std::string extractIPAddress(const std::string &str)
 {
 	std::regex ip_regex(R"((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))");
@@ -221,17 +235,12 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
     for (const std::string& ndi_name : name_list) {
         auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
-            NDIlib_recv_instance_t recv = getRecv(ndiLib, ndi_name);
-			if (recv == nullptr) continue;
-
-            //ViscaAPI visca = getViscaAPI(ndiLib, recv);
-			if (true) { //visca.isConnected() == VOK) {
-	        	recv_info_t recv_info = {};
-	        	recv_info.recv = recv;
-		    	recv_info.visca = new ViscaAPI();
-            	recvs[ndi_name] = recv_info;
-            	changed = true;
-			}
+			recv_info_t recv_info = {};
+			recv_info.recv = nullptr;
+			recv_info.visca_supported = false;
+			recv_info.ndi_name = ndi_name;	
+			recvs[ndi_name] = recv_info;
+			changed = true;
         }
     }
     if (changed) {
