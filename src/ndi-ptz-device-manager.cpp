@@ -231,6 +231,7 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
                     const std::vector<std::string> name_list, 
                     std::map<std::string, recv_info_t>& recvs)
 {
+	UNUSED(ndiLib);
     bool changed = false;
     for (const std::string& ndi_name : name_list) {
         auto it = recvs.find(ndi_name);
