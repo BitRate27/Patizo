@@ -150,7 +150,10 @@ static std::string getNDIName(const obs_source_t *source)
 	if (id != "ndi_source")
 		return "";
 	obs_data_t *data = obs_source_get_settings(source);
-	return obs_data_get_string(data, "ndi_source_name");
+	if (obs_data_get_bool(data, "ndi_ptz")) {
+		return obs_data_get_string(data, "ndi_source_name");
+	}
+	return "";
 };
 
 NDIlib_recv_instance_t NDIPTZDeviceManager::connectRecv(const NDIlib_v4 *ndiLib,
