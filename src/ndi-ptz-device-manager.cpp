@@ -187,12 +187,12 @@ static std::string extractIPAddress(const std::string &str)
 	}
 	return "";
 };
-static ViscaAPI getViscaAPI(const NDIlib_v4 *ndiLib,
+static ViscaAPI *getViscaAPI(const NDIlib_v4 *ndiLib,
 			    NDIlib_recv_instance_t recv)
 {
-	if (!ndiLib->recv_ptz_is_supported(recv))
-		return ViscaAPI();
-	ViscaAPI visca;
+	// if (!ndiLib->recv_ptz_is_supported(recv))
+	//	return ViscaAPI();
+	ViscaAPI *visca = new ViscaAPI();
 	char ip[100];
 	const char *p_url = ndiLib->recv_get_web_control(recv);
 	if (p_url) {
@@ -202,7 +202,7 @@ static ViscaAPI getViscaAPI(const NDIlib_v4 *ndiLib,
 	} else {
 		snprintf(ip, 100, "127.0.0.1");
 	}
-	visca.connectCamera(std::string(ip), 5678);
+	visca->connectCamera(std::string(ip), 5678);
 	return visca;
 };
 std::vector<std::string> NDIPTZDeviceManager::getNDINames()
@@ -240,8 +240,11 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
         auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
 			recv_info_t recv_info = {};
+			auto tempRecv = connectRecv(ndiLib, ndi_name);
+			recv_info.visca = getViscaAPI(ndiLib, tempRecv);
+			recv_info.visca_supported = (recv_info.visca->connectionStatus() == VOK);
+			disconnectRecv(ndiLib, tempRecv);
 			recv_info.recv = nullptr;
-			recv_info.visca_supported = false;
 			recv_info.ndi_name = ndi_name;	
 			recvs[ndi_name] = recv_info;
 			changed = true;
