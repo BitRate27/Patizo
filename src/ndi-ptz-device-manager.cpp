@@ -166,7 +166,7 @@ NDIlib_recv_instance_t NDIPTZDeviceManager::connectRecv(const NDIlib_v4 *ndiLib,
 	NDIlib_recv_create_v3_t recv_create_desc;
 	recv_create_desc.source_to_connect_to = selected_source;
 	recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
-	recv_create_desc.bandwidth = NDIlib_recv_bandwidth_lowest;
+	recv_create_desc.bandwidth = NDIlib_recv_bandwidth_metadata_only;
 
 	recv = ndiLib->recv_create_v3(&recv_create_desc);
 	return recv;
@@ -240,11 +240,9 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
         auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
 			recv_info_t recv_info = {};
-			auto tempRecv = connectRecv(ndiLib, ndi_name);
-			recv_info.visca = getViscaAPI(ndiLib, tempRecv);
+			recv_info.recv = connectRecv(ndiLib, ndi_name);
+			recv_info.visca = getViscaAPI(ndiLib, recv_info.recv);
 			recv_info.visca_supported = (recv_info.visca->connectionStatus() == VOK);
-			disconnectRecv(ndiLib, tempRecv);
-			recv_info.recv = nullptr;
 			recv_info.ndi_name = ndi_name;	
 			recvs[ndi_name] = recv_info;
 			changed = true;

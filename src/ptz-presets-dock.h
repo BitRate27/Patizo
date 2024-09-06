@@ -77,9 +77,9 @@ public:
     void recallPreset() {
 
         auto recv_info = _manager->getRecvInfo(_manager->getCurrent());
-	    auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
-        _ndiLib->recv_ptz_recall_preset(recv, index, 5);
-	    _manager->disconnectRecv(_ndiLib, recv);
+	    //auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
+        _ndiLib->recv_ptz_recall_preset(recv_info.recv, index, 5);
+	    //_manager->disconnectRecv(_ndiLib, recv);
     }
 
 signals:
@@ -87,13 +87,6 @@ signals:
     void nameChanged(const QString &newName);
 
 protected:
-    void mousePressEvent(QMouseEvent *event) override {
-        if (event->button() == Qt::LeftButton) {
-            recallPreset();
-        }
-        QWidget::mousePressEvent(event);
-    }
-    
     void paintEvent(QPaintEvent *event) override
     {        
         if (!event) return;
@@ -112,7 +105,7 @@ protected:
             _backgroundColor = palette().color(QPalette::Button);
             update(); 
         } else if (event->type() == QEvent::MouseButtonPress) {
-            handleSingleClick();
+            recallPreset();
         } else if (event->type() == QEvent::MouseButtonDblClick) {
             startEditing(); 
         }
@@ -127,13 +120,6 @@ private:
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
     QColor _backgroundColor = palette().color(QPalette::Button);
-
-    void handleSingleClick() {
-        auto recv_info = _manager->getRecvInfo(_manager->getCurrent());
-	    auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
-        _ndiLib->recv_ptz_recall_preset(recv, index, 5);
-	    _manager->disconnectRecv(_ndiLib, recv);
-    }
 
     void startEditing() {
         _lineEdit->setText(_label->text());
