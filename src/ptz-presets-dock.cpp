@@ -1,11 +1,18 @@
 #include "ptz-presets-dock.h"
 #include <obs-frontend-api.h>
 
-static PTZPresetsWidget *g_dialog = nullptr;
+PTZPresetsWidget *g_dialog = nullptr;
+struct teststruct {
+	int a = 1;
+	int b = 3;
+}; 
+
+teststruct *g_struct = nullptr;
 
 void ptz_presets_init(const NDIlib_v4 *ndiLib, NDIPTZDeviceManager *manager)
 {
 	g_dialog = new PTZPresetsWidget(ndiLib, manager);
+	g_struct = new teststruct();
 
     obs_frontend_add_dock_by_id(
 	   "PatizoPresets",
@@ -26,8 +33,8 @@ void ptz_presets_hotkey_function(void* priv, obs_hotkey_id id, obs_hotkey_t* hot
 }
 void ptz_presets_destroy()
 {
-	if (g_dialog) {
-		g_dialog = nullptr;
-	}
+	//g_dialog->deleteLater();
+	blog(LOG_INFO,
+	     "[patizo] %d %d ",g_struct->a, g_struct->b );
 	blog(LOG_INFO, "[patizo] obs_module_unload: Patizo Presets Dock removed");
 }

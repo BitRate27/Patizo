@@ -36,7 +36,7 @@ class PresetButton : public QWidget {
     Q_OBJECT
 
 public:
-    PresetButton(QWidget *parent_, int index_, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager)
+    PresetButton(QWidget *parent_, uint8_t index_, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager)
         : QWidget(parent_), index(index_), _ndiLib(ndiLib), _manager(manager)
     {
         QVBoxLayout *layout = new QVBoxLayout(this);
@@ -75,10 +75,18 @@ public:
     }
 
     void recallPreset() {
-
+         
         auto recv_info = _manager->getRecvInfo(_manager->getCurrent());
 	    //auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
-        _ndiLib->recv_ptz_recall_preset(recv_info.recv, index, 5);
+        //_ndiLib->recv_ptz_recall_preset(recv_info.recv, index, 5);
+	    if (recv_info.visca_supported) {
+		    auto vstat = recv_info.visca->recallPreset(index);
+            if (vstat != VOK) {
+			    blog(LOG_INFO,
+				 "[patizo] Error %d recalling preset %d", vstat,
+				 index);
+		    };
+	    }
 	    //_manager->disconnectRecv(_ndiLib, recv);
     }
 
@@ -116,7 +124,7 @@ protected:
 private:
     QLabel *_label;
     QLineEdit *_lineEdit;
-    int index;
+    uint8_t index;
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
     QColor _backgroundColor = palette().color(QPalette::Button);
@@ -215,7 +223,6 @@ public:
     }
 
     ~PTZPresetsWidget() {
-        delete[] _buttons;
         _manager->unregisterRecvsChangedCallback(_callbackid);
     }
 
