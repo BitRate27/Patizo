@@ -180,7 +180,7 @@ public:
         for (int i = 0; i < _nrows; ++i) {
             for (int j = 0; j < _ncols; ++j) {
                 int ndx = i * _ncols + j;
-                _buttons[ndx] = new PresetButton(this, uint8_t(ndx + 1), _ndiLib, _manager);
+                _buttons[ndx] = new PresetButton(this, ndx + 1, _ndiLib, _manager);
 
                 grid->addWidget(_buttons[ndx], i, j);
                 obs_hotkey_register_frontend(QString("PatizoPreset%1").arg(ndx+1).toUtf8(),
