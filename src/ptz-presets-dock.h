@@ -106,7 +106,7 @@ protected:
     }
     
     bool event(QEvent *event) override {
-       static PTZPresetsDock* lastPressedButton = nullptr;
+       static int lastPressedButton = 0;
 
         if (event->type() == QEvent::Enter) {
             _backgroundColor = palette().color(QPalette::Highlight);
@@ -117,7 +117,7 @@ protected:
                 update();
             }
         } else if (event->type() == QEvent::MouseButtonPress) {
-            if (lastPressedButton && lastPressedButton != this) {
+            if (lastPressedButton && lastPressedButton != index) {
                 lastPressedButton->_backgroundColor = palette().color(QPalette::Button);
                 lastPressedButton->update();
             }
