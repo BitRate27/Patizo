@@ -36,7 +36,7 @@ class PresetButton : public QWidget {
     Q_OBJECT
 
 public:
-    PresetButton(QWidget *parent_, uint8_t index_, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager)
+    PresetButton(QWidget *parent_, int index_, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager)
         : QWidget(parent_), index(index_), _ndiLib(ndiLib), _manager(manager)
     {
         QVBoxLayout *layout = new QVBoxLayout(this);
@@ -106,13 +106,24 @@ protected:
     }
     
     bool event(QEvent *event) override {
+       static PTZPresetsDock* lastPressedButton = nullptr;
+
         if (event->type() == QEvent::Enter) {
             _backgroundColor = palette().color(QPalette::Highlight);
             update();
         } else if (event->type() == QEvent::Leave) {
-            _backgroundColor = palette().color(QPalette::Button);
-            update(); 
+            if (this != lastPressedButton) {
+                _backgroundColor = palette().color(QPalette::Button);
+                update();
+            }
         } else if (event->type() == QEvent::MouseButtonPress) {
+            if (lastPressedButton && lastPressedButton != this) {
+                lastPressedButton->_backgroundColor = palette().color(QPalette::Button);
+                lastPressedButton->update();
+            }
+            _backgroundColor = palette().color(QPalette::Highlight);
+            lastPressedButton = this;
+            update();
             recallPreset();
         } else if (event->type() == QEvent::MouseButtonDblClick) {
             startEditing(); 
@@ -124,7 +135,7 @@ protected:
 private:
     QLabel *_label;
     QLineEdit *_lineEdit;
-    uint8_t index;
+    int index;
     const NDIlib_v4* _ndiLib;
     NDIPTZDeviceManager* _manager;
     QColor _backgroundColor = palette().color(QPalette::Button);
