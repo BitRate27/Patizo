@@ -1,4 +1,7 @@
+Had to change source to get ptz enebled recognized
+
 Use scene API to find preview and program status
+
 Try to get port from http API http://[cameraIP]/param.cgi?get_network_conf
 
 Up version number in code
