@@ -1,4 +1,6 @@
-# OBS Plugin Template
+# Patizo - OBS plugin to control PTZ cameras in a dock in OBS
+
+![Alt](https://repobeats.axiom.co/api/embed/bd43c365a4b20afebbc8f89b72e5e7fdce09dda0.svg "Repobeats analytics image")
 
 ## Introduction
 
