@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <qgridlayout.h>
 #include <qlabel.h>
+#include <qobject.h>
 #include <QMouseEvent>
 #include <qcombobox.h>
 #include <qpainter.h>
@@ -163,8 +164,10 @@ class PTZPresetsWidget : public QWidget {
     Q_OBJECT
 
 public:
-    PTZPresetsWidget(const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager) : 
-        _ndiLib(ndiLib), _manager(manager)
+    PTZPresetsWidget(QWidget *parent, const NDIlib_v4* ndiLib, NDIPTZDeviceManager* manager) : 
+        QWidget(parent),
+		  _ndiLib(ndiLib),
+		  _manager(manager)
     {
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
 	    _label = new QLabel("");
@@ -235,6 +238,10 @@ public:
 
     ~PTZPresetsWidget() {
         _manager->unregisterRecvsChangedCallback(_callbackid);
+	    for (int i = 0; i < _nrows * _ncols; ++i) {
+		    delete _buttons[i];
+	    }
+	    delete[] _buttons;
     }
 
 protected:

@@ -41,6 +41,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 src/plugin-main.cpp
 src/ptz-presets-dock.cpp 
 src/ptz-presets-dock.h
+src/ptz-controller.cpp 
+src/ptz-controller.h
 src/ndi-ptz-device-manager.cpp
 src/ndi-ptz-device-manager.h)
 # Add the lib/ndi directory as an include directory

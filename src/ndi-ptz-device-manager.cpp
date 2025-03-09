@@ -12,6 +12,44 @@ static void on_scene_changed(enum obs_frontend_event event, void *param)
 	manager->onSceneChanged();
 };
 
+std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
+{
+	std::vector<obs_source_t *> sources;
+
+	// Convert the source to a scene
+	obs_scene_t *scene = obs_scene_from_source(scene_source);
+	if (!scene) {
+		return sources;
+	}
+
+	// Enumerate the items in the scene
+	obs_scene_enum_items(
+		scene,
+		[](obs_scene_t *, obs_sceneitem_t *item, void *param) -> bool {
+			auto *sources =
+				static_cast<std::vector<obs_source_t *> *>(param);
+
+			// Get the source from the scene item
+			obs_source_t *source = obs_sceneitem_get_source(item);
+			if (source) {
+				std::string id = obs_source_get_id(source);
+				if (id == "ndi_source") {
+					obs_data_t *data =
+						obs_source_get_settings(source);
+					if (obs_data_get_bool(data,
+							      "ndi_ptz")) {
+						sources->push_back(source);
+					}
+				}
+			}
+
+			return true; // Continue enumeration
+		},
+		&sources);
+
+	return sources;
+}
+
 void NDIPTZDeviceManager::init(const NDIlib_v4 *ndiLib)
 {
 	_ndiLib = ndiLib;
@@ -200,7 +238,7 @@ static ViscaAPI *getViscaAPI(const NDIlib_v4 *ndiLib,
 			  extractIPAddress(std::string(p_url)).c_str());
 		ndiLib->recv_free_string(recv, p_url);
 	} else {
-		snprintf(ip, 100, "127.0.0.1");
+		snprintf(ip, 100, "10.0.10.23");
 	}
 	visca->connectCamera(std::string(ip), 5678);
 	return visca;
@@ -218,6 +256,8 @@ std::vector<std::string> NDIPTZDeviceManager::createListOfNDINames(obs_scene_t* 
     std::vector<std::string> name_list;
     obs_scene_enum_items(scene, [](obs_scene_t*, obs_sceneitem_t* item, void* param) -> bool {
         auto names = static_cast<std::vector<std::string>*>(param);
+		if (!obs_sceneitem_visible(item))
+			return true;
         obs_source_t* source = obs_sceneitem_get_source(item);
         std::string ndi_name = getNDIName(source);
         if (ndi_name == "") return true;

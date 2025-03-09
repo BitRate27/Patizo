@@ -11,11 +11,13 @@
 
 struct recv_info_t {
     std::string ndi_name;
+	obs_source_t *source;
     NDIlib_recv_instance_t recv;
     bool visca_supported;
     ViscaAPI *visca;
 };
 typedef std::function<void()> RecvsChangedCallback;
+std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source);
 
 class NDIPTZDeviceManager {
 public:
