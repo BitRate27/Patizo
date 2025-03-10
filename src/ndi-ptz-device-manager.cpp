@@ -228,8 +228,6 @@ static std::string extractIPAddress(const std::string &str)
 static ViscaAPI *getViscaAPI(const NDIlib_v4 *ndiLib,
 			    NDIlib_recv_instance_t recv)
 {
-	// if (!ndiLib->recv_ptz_is_supported(recv))
-	//	return ViscaAPI();
 	ViscaAPI *visca = new ViscaAPI();
 	char ip[100];
 	const char *p_url = ndiLib->recv_get_web_control(recv);
@@ -240,7 +238,7 @@ static ViscaAPI *getViscaAPI(const NDIlib_v4 *ndiLib,
 	} else {
 		snprintf(ip, 100, "10.0.10.23");
 	}
-	visca->connectCamera(std::string(ip), 5678);
+	// visca->connectCamera(std::string(ip), 5678);
 	return visca;
 };
 std::vector<std::string> NDIPTZDeviceManager::getNDINames()

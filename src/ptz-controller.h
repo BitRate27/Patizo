@@ -39,7 +39,6 @@ public:
 	{
 		obs_frontend_remove_event_callback(controller_on_scene_changed,
 						   this);
-		bfree(_canvas);
 	};
 	void updateSourceList()
 	{
