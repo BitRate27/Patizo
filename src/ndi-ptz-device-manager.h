@@ -51,7 +51,7 @@ private:
     PreviewStatus _currentPreviewStatus = PreviewStatus::NotSupported;
     // Helper methods
     void updateRecvInfo(const NDIlib_v4* ndiLib, 
-                    const std::vector<std::string> name_list, 
+                    const std::vector<obs_source_t *> source_list, 
                     std::map<std::string, recv_info_t>& recvs);
     void notifyCallbacks()
     {
@@ -62,5 +62,5 @@ private:
 	    }
     };
     void closeAllConnections();
-    std::vector<std::string> createListOfNDINames(obs_scene_t *scene);
+    std::vector<obs_source_t*> createListOfNDISources(obs_scene_t *scene);
 };

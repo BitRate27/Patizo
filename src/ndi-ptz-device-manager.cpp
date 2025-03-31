@@ -11,7 +11,17 @@ static void on_scene_changed(enum obs_frontend_event event, void *param)
 		static_cast<NDIPTZDeviceManager *>(param);
 	manager->onSceneChanged();
 };
-
+static std::string getNDIName(const obs_source_t *source)
+{
+	std::string id = obs_source_get_id(source);
+	if (id != "ndi_source")
+		return "";
+	obs_data_t *data = obs_source_get_settings(source);
+	if (obs_data_get_bool(data, "ndi_ptz")) {
+		return obs_data_get_string(data, "ndi_source_name");
+	}
+	return "";
+};
 std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 {
 	std::vector<obs_source_t *> sources;
@@ -88,38 +98,38 @@ void NDIPTZDeviceManager::unregisterRecvsChangedCallback(size_t callbackId) {
 void NDIPTZDeviceManager::onSceneChanged()
 {
     // Function to collect NDI names from a given scene
-    auto collectNDINamesFromScene = [this](obs_source_t* scene_source) {
+    auto collectNDISourcesFromScene = [this](obs_source_t* scene_source) {
         auto scene = obs_scene_from_source(scene_source);
-        return createListOfNDINames(scene);
+        return createListOfNDISources(scene);
     };
 
     // Get all scenes
     obs_frontend_source_list source_list = {0};
-    std::vector<std::string> all_ndinames;
+    std::vector<obs_source_t*> all_ndi_sources;
 	obs_frontend_get_scenes(&source_list);
     for (size_t i = 0; i < source_list.sources.num; ++i) {
         obs_source_t *source = source_list.sources.array[i];
         if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE) {
-            std::vector<std::string> scene_ndinames = collectNDINamesFromScene(source);
-            all_ndinames.insert(all_ndinames.end(), scene_ndinames.begin(), scene_ndinames.end());
+            std::vector<obs_source_t*> scene_ndi_sources = collectNDISourcesFromScene(source);
+            all_ndi_sources.insert(all_ndi_sources.end(), scene_ndi_sources.begin(), scene_ndi_sources.end());
         }
     }
 
     obs_frontend_source_list_free(&source_list);
 
-	updateRecvInfo(_ndiLib, all_ndinames, _recvs);
+	updateRecvInfo(_ndiLib, all_ndi_sources, _recvs);
 
 	obs_source_t *preview_source = obs_frontend_get_current_preview_scene();
 
 	auto preview_scene = obs_scene_from_source(preview_source);
 	obs_source_release(preview_source);
 
-	std::vector<std::string> preview_ndinames =
-		createListOfNDINames(preview_scene);
+	std::vector<obs_source_t*> preview_ndi_sources =
+		createListOfNDISources(preview_scene);
 
-	updateRecvInfo(_ndiLib, preview_ndinames, _recvs);
+	updateRecvInfo(_ndiLib, preview_ndi_sources, _recvs);
 
-	if ((preview_source != nullptr) && (preview_ndinames.size() == 0)) {
+	if ((preview_source != nullptr) && (preview_ndi_sources.size() == 0)) {
 		_current = "";		
 		_currentPreviewStatus = PreviewStatus::NotSupported;
 		notifyCallbacks();
@@ -130,15 +140,15 @@ void NDIPTZDeviceManager::onSceneChanged()
 	auto program_scene = obs_scene_from_source(program_source);
 	obs_source_release(program_source);
 
-	std::vector<std::string> program_ndinames =
-		createListOfNDINames(program_scene);
+	std::vector<obs_source_t*> program_ndi_sources =
+		createListOfNDISources(program_scene);
 
 	if (preview_source != nullptr) {
 		// Check if preview source also on program
-		for (const std::string &name : preview_ndinames) {
-			auto it = std::find(program_ndinames.begin(),
-					    program_ndinames.end(), name);
-			if (it != program_ndinames.end()) {
+		for (obs_source_t *source : preview_ndi_sources) {
+			auto it = std::find(program_ndi_sources.begin(),
+					    program_ndi_sources.end(), source);
+			if (it != program_ndi_sources.end()) {
 				_currentPreviewStatus = PreviewStatus::OnProgram;
 				_current = "";
 				notifyCallbacks();
@@ -151,8 +161,8 @@ void NDIPTZDeviceManager::onSceneChanged()
 	// otherwise we are not in Studio mode, so allow preset recall on program
 	// source.
 	std::string ndi_name =
-		(preview_ndinames.size() > 0)   ? preview_ndinames[0]
-		: (program_ndinames.size() > 0) ? program_ndinames[0]
+		(preview_ndi_sources.size() > 0)   ? getNDIName(preview_ndi_sources[0])
+		: (program_ndi_sources.size() > 0) ? getNDIName(program_ndi_sources[0])
 						: "";
 
 	if (ndi_name != "") {
@@ -182,17 +192,7 @@ void NDIPTZDeviceManager::closeAllConnections()
 	}
 	_recvs.clear();
 };
-static std::string getNDIName(const obs_source_t *source)
-{
-	std::string id = obs_source_get_id(source);
-	if (id != "ndi_source")
-		return "";
-	obs_data_t *data = obs_source_get_settings(source);
-	if (obs_data_get_bool(data, "ndi_ptz")) {
-		return obs_data_get_string(data, "ndi_source_name");
-	}
-	return "";
-};
+
 
 NDIlib_recv_instance_t NDIPTZDeviceManager::connectRecv(const NDIlib_v4 *ndiLib,
 				      const std::string &ndi_name)
@@ -249,11 +249,11 @@ std::vector<std::string> NDIPTZDeviceManager::getNDINames()
     }
     return name_list;
 };
-std::vector<std::string> NDIPTZDeviceManager::createListOfNDINames(obs_scene_t* scene)
+std::vector<obs_source_t*> NDIPTZDeviceManager::createListOfNDISources(obs_scene_t* scene)
 {
-    std::vector<std::string> name_list;
+    std::vector<obs_source_t*> name_list;
     obs_scene_enum_items(scene, [](obs_scene_t*, obs_sceneitem_t* item, void* param) -> bool {
-        auto names = static_cast<std::vector<std::string>*>(param);
+        auto sources = static_cast<std::vector<obs_source_t*>*>(param);
 		if (!obs_sceneitem_visible(item))
 			return true;
         obs_source_t* source = obs_sceneitem_get_source(item);
@@ -262,19 +262,20 @@ std::vector<std::string> NDIPTZDeviceManager::createListOfNDINames(obs_scene_t* 
 
         blog(LOG_INFO, "[patizo] NDI name: %s, showing: %d", ndi_name.c_str(), obs_source_showing(source));
         if (!obs_source_showing(source)) return true;
-        names->push_back(ndi_name);
+        sources->push_back(source);
         return true;
     }, &name_list);
     return name_list;
 };
 
 void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib, 
-                    const std::vector<std::string> name_list, 
+                    const std::vector<obs_source_t *> source_list, 
                     std::map<std::string, recv_info_t>& recvs)
 {
 	(void)ndiLib;
     bool changed = false;
-    for (const std::string& ndi_name : name_list) {
+    for (obs_source_t* source : source_list) {
+	    std::string ndi_name = getNDIName(source);
         auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
 			recv_info_t recv_info = {};
@@ -282,6 +283,7 @@ void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib,
 			recv_info.visca = getViscaAPI(ndiLib, recv_info.recv);
 			recv_info.visca_supported = (recv_info.visca->connectionStatus() == VOK);
 			recv_info.ndi_name = ndi_name;	
+			recv_info.source = obs_source_get_ref(source);
 			recvs[ndi_name] = recv_info;
 			changed = true;
         }
