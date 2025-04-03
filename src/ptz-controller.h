@@ -8,6 +8,8 @@
 #include <qobject.h>
 #include <qcombobox.h>
 #include <qlayout.h>
+#include <qthread.h>
+
 void controller_on_scene_changed(enum obs_frontend_event event, void *param);
 
 class PTZControllerWidget : public QWidget {
@@ -28,7 +30,7 @@ public:
 		connect(_sourceComboBox,
 			QOverload<int>::of(&QComboBox::currentIndexChanged),
 			this, &PTZControllerWidget::onSourceSelected);
-		_canvas = new InteractiveCanvas(this);
+		_canvas = new InteractiveCanvas(this,manager);
 		_canvas->setSizePolicy(QSizePolicy::Expanding,
 				       QSizePolicy::Expanding);
 		vbox->addWidget(_canvas);
