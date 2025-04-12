@@ -52,7 +52,7 @@ bool obs_module_load(void) {
     }
 
 	g_ndiptz = new NDIPTZDeviceManager();
-	g_ndiptz->init(g_ndiLib);
+	g_ndiptz->init();
 
 	ptz_presets_init(g_ndiLib, g_ndiptz);
 	blog(LOG_INFO, "[patizo] Patizo presets dock added");

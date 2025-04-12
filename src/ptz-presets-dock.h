@@ -80,8 +80,8 @@ public:
         auto recv_info = _manager->getRecvInfo(_manager->getCurrent());
 	    //auto recv = _manager->connectRecv(_ndiLib, recv_info.ndi_name);
         //_ndiLib->recv_ptz_recall_preset(recv_info.recv, index, 5);
-	    if (recv_info.visca_supported) {
-		    auto vstat = recv_info.visca->recallPreset(index);
+	    if (recv_info->visca_supported) {
+		    auto vstat = recv_info->visca->recallPreset(index);
             if (vstat != VOK) {
 			    blog(LOG_INFO,
 				 "[patizo] Error %d recalling preset %d", vstat,

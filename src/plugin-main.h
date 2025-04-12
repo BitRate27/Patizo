@@ -1,4 +1,10 @@
 #pragma once
-#include "ndi-ptz-device-manager.h"
-extern NDIPTZDeviceManager *g_ndiptz;
+#include <obs-module.h>
+#include <plugin-support.h>
+#include <QMainWindow>
+#include <QLibrary>
+#include <QDir>
+#include <QFileInfo>
+#include "Processing.NDI.Lib.h"
+#include "ViscaAPI.h"
 extern const NDIlib_v4* g_ndiLib;

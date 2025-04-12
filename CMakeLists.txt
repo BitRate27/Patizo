@@ -39,12 +39,18 @@ endif()
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE 
 src/plugin-main.cpp
+src/plugin-main.h
 src/ptz-presets-dock.cpp 
 src/ptz-presets-dock.h
-src/ptz-controller.cpp 
+src/ptz-controller.cpp
 src/ptz-controller.h
+src/interactive-canvas.cpp
+src/interactive-canvas.h
 src/ndi-ptz-device-manager.cpp
-src/ndi-ptz-device-manager.h)
+src/ndi-ptz-device-manager.h
+src/receiver.cpp 
+src/receiver.h
+)
 # Add the lib/ndi directory as an include directory
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/lib/ndi ${CMAKE_SOURCE_DIR}/lib/visca27 )
 

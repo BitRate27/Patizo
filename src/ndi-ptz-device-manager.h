@@ -1,34 +1,21 @@
 #pragma once
-
 #include <map>
 #include <string>
-#include <cstddef>
 #include <functional>
 #include <vector>
 #include <obs.h>
-#include "Processing.NDI.Lib.h"
-#include "ViscaAPI.h"
+#include "receiver.h"
 
-struct recv_info_t {
-    std::string ndi_name;
-	obs_source_t *source;
-    NDIlib_recv_instance_t recv;
-    bool visca_supported;
-    ViscaAPI *visca;
-};
 typedef std::function<void()> RecvsChangedCallback;
 std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source);
 
 class NDIPTZDeviceManager {
 public:
-	NDIPTZDeviceManager() : _current(""), _recvs(), _ndiLib(nullptr) {};
-    void init(const NDIlib_v4* ndiLib);
+	NDIPTZDeviceManager() : _current(""), _recvs() {};
+    void init();
     ~NDIPTZDeviceManager();
 
-    recv_info_t getRecvInfo(const std::string &ndi_name);
-    NDIlib_recv_instance_t connectRecv(const NDIlib_v4 *ndiLib,
-				      const std::string &ndi_name);
-    void disconnectRecv(const NDIlib_v4 *ndiLib, NDIlib_recv_instance_t recv);
+    Receiver *getRecvInfo(const std::string &ndi_name);
     std::string getCurrent() const;
     void onSceneChanged();
     std::vector<std::string> getNDINames();
@@ -43,16 +30,14 @@ public:
         return _currentPreviewStatus; 
     };
 private:
-    std::map<std::string, recv_info_t> _recvs;
+    std::map<std::string, Receiver*> _recvs;
     std::vector<RecvsChangedCallback> _recvsChangedCallbacks;
-    const NDIlib_v4* _ndiLib;
     std::string _current = "";
     // Add the private member variable
     PreviewStatus _currentPreviewStatus = PreviewStatus::NotSupported;
     // Helper methods
-    void updateRecvInfo(const NDIlib_v4* ndiLib, 
-                    const std::vector<obs_source_t *> source_list, 
-                    std::map<std::string, recv_info_t>& recvs);
+    void updateRecvInfo(const std::vector<obs_source_t *> source_list, 
+                    std::map<std::string, Receiver*>& recvs);
     void notifyCallbacks()
     {
 	    for (const auto &callback : _recvsChangedCallbacks) {

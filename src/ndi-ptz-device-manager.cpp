@@ -11,17 +11,7 @@ static void on_scene_changed(enum obs_frontend_event event, void *param)
 		static_cast<NDIPTZDeviceManager *>(param);
 	manager->onSceneChanged();
 };
-static std::string getNDIName(const obs_source_t *source)
-{
-	std::string id = obs_source_get_id(source);
-	if (id != "ndi_source")
-		return "";
-	obs_data_t *data = obs_source_get_settings(source);
-	if (obs_data_get_bool(data, "ndi_ptz")) {
-		return obs_data_get_string(data, "ndi_source_name");
-	}
-	return "";
-};
+
 std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 {
 	std::vector<obs_source_t *> sources;
@@ -31,7 +21,7 @@ std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 	if (!scene) {
 		return sources;
 	}
-
+	
 	// Enumerate the items in the scene
 	obs_scene_enum_items(
 		scene,
@@ -51,6 +41,15 @@ std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 						sources->push_back(source);
 					}
 				}
+				if (id == "dshow_input") {
+					obs_data_t *data =
+						obs_source_get_settings(source);
+					std::string video_device_id =
+						obs_data_get_string(
+							data,
+							"video_device_id");
+					sources->push_back(source);
+				}
 			}
 
 			return true; // Continue enumeration
@@ -60,9 +59,8 @@ std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 	return sources;
 }
 
-void NDIPTZDeviceManager::init(const NDIlib_v4 *ndiLib)
+void NDIPTZDeviceManager::init()
 {
-	_ndiLib = ndiLib;
 	obs_frontend_add_event_callback(on_scene_changed, this);
 };
 
@@ -71,14 +69,14 @@ NDIPTZDeviceManager::~NDIPTZDeviceManager()
 	closeAllConnections();
 };
 
-recv_info_t NDIPTZDeviceManager::getRecvInfo(const std::string &ndi_name)
+Receiver *NDIPTZDeviceManager::getRecvInfo(const std::string &ndi_name)
 {
 	auto it = _recvs.find(ndi_name);
 	if (it != _recvs.end()) {
 		return it->second;
 	}
-	// Return an empty struct or handle error
-	return recv_info_t{};
+	// Return an empty Receiver
+	return new Receiver();
 };
 
 std::string NDIPTZDeviceManager::getCurrent() const
@@ -117,7 +115,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 
     obs_frontend_source_list_free(&source_list);
 
-	updateRecvInfo(_ndiLib, all_ndi_sources, _recvs);
+	updateRecvInfo(all_ndi_sources, _recvs);
 
 	obs_source_t *preview_source = obs_frontend_get_current_preview_scene();
 
@@ -127,7 +125,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 	std::vector<obs_source_t*> preview_ndi_sources =
 		createListOfNDISources(preview_scene);
 
-	updateRecvInfo(_ndiLib, preview_ndi_sources, _recvs);
+	updateRecvInfo(preview_ndi_sources, _recvs);
 
 	if ((preview_source != nullptr) && (preview_ndi_sources.size() == 0)) {
 		_current = "";		
@@ -178,11 +176,11 @@ void NDIPTZDeviceManager::onSceneChanged()
 void NDIPTZDeviceManager::closeAllConnections()
 {
 	for (auto &recv : _recvs) {
-		if (recv.second.recv == nullptr)
-			_ndiLib->recv_destroy(recv.second.recv);
-		if (recv.second.visca_supported) {
+		if (recv.second->recv == nullptr)
+			g_ndiLib->recv_destroy(recv.second->recv);
+		if (recv.second->visca_supported) {
 			visca_error_t verr =
-				recv.second.visca->disconnectCamera();
+				recv.second->visca->disconnectCamera();
 			if (verr != VOK) {
 				blog(LOG_ERROR,
 				     "[patizo] Failed to disconnect camera. Error code: %d",
@@ -193,54 +191,6 @@ void NDIPTZDeviceManager::closeAllConnections()
 	_recvs.clear();
 };
 
-
-NDIlib_recv_instance_t NDIPTZDeviceManager::connectRecv(const NDIlib_v4 *ndiLib,
-				      const std::string &ndi_name)
-{
-	NDIlib_recv_instance_t recv = nullptr;
-	NDIlib_source_t selected_source;
-	selected_source.p_ndi_name = ndi_name.data();
-
-	NDIlib_recv_create_v3_t recv_create_desc;
-	recv_create_desc.source_to_connect_to = selected_source;
-	recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
-	recv_create_desc.bandwidth = NDIlib_recv_bandwidth_metadata_only;
-
-	recv = ndiLib->recv_create_v3(&recv_create_desc);
-	return recv;
-};
-
-void NDIPTZDeviceManager::disconnectRecv(const NDIlib_v4 *ndiLib,
-					 NDIlib_recv_instance_t recv)
-{
-	ndiLib->recv_destroy(recv);
-};
-
-static std::string extractIPAddress(const std::string &str)
-{
-	std::regex ip_regex(R"((\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}))");
-	std::smatch match;
-	if (std::regex_search(str, match, ip_regex)) {
-		return match[0];
-	}
-	return "";
-};
-static ViscaAPI *getViscaAPI(const NDIlib_v4 *ndiLib,
-			    NDIlib_recv_instance_t recv)
-{
-	ViscaAPI *visca = new ViscaAPI();
-	char ip[100];
-	const char *p_url = ndiLib->recv_get_web_control(recv);
-	if (p_url) {
-		snprintf(ip, 100, "%s",
-			  extractIPAddress(std::string(p_url)).c_str());
-		ndiLib->recv_free_string(recv, p_url);
-	} else {
-		snprintf(ip, 100, "10.0.10.23");
-	}
-	// visca->connectCamera(std::string(ip), 5678);
-	return visca;
-};
 std::vector<std::string> NDIPTZDeviceManager::getNDINames()
 {
     std::vector<std::string> name_list;
@@ -268,23 +218,17 @@ std::vector<obs_source_t*> NDIPTZDeviceManager::createListOfNDISources(obs_scene
     return name_list;
 };
 
-void NDIPTZDeviceManager::updateRecvInfo(const NDIlib_v4 *ndiLib, 
-                    const std::vector<obs_source_t *> source_list, 
-                    std::map<std::string, recv_info_t>& recvs)
+void NDIPTZDeviceManager::updateRecvInfo(const std::vector<obs_source_t *> source_list, 
+                    std::map<std::string, Receiver*>& recvs)
 {
-	(void)ndiLib;
     bool changed = false;
     for (obs_source_t* source : source_list) {
 	    std::string ndi_name = getNDIName(source);
         auto it = recvs.find(ndi_name);
         if (it == recvs.end()) {
-			recv_info_t recv_info = {};
-			recv_info.recv = connectRecv(ndiLib, ndi_name);
-			recv_info.visca = getViscaAPI(ndiLib, recv_info.recv);
-			recv_info.visca_supported = (recv_info.visca->connectionStatus() == VOK);
-			recv_info.ndi_name = ndi_name;	
-			recv_info.source = obs_source_get_ref(source);
-			recvs[ndi_name] = recv_info;
+			Receiver *recv_info = new Receiver();
+			recv_info->connect(source);
+			recvs[recv_info->ndi_name] = recv_info;
 			changed = true;
         }
     }
