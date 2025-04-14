@@ -17,26 +17,7 @@ ViscaAPI ptz_preview_get_visca_connection()
 	return *recv->visca;
 }
 
-typedef struct context_t {
-	obs_source_t *sourceToControl;
-	Receiver *receiver;
-	short x_delta;
-	short y_delta;
-	short x_start;
-	short y_start;
-	short x_move;
-	short y_move;
-	int zoom;
-	float pixels_to_pan;
-	float pixels_to_tilt;
-	visca_tuple_t pt_start;
-	bool mouse_down;
-	bool drag_start;
-	bool running;
-	bool new_source;
-	bool waiting_for_status;
-	bool connected;
-} context_t;
+
 
 void draw_display(void *param, uint32_t cx, uint32_t cy)
 {
@@ -94,6 +75,7 @@ InteractiveCanvas::InteractiveCanvas(QWidget *parent,
 InteractiveCanvas::~InteractiveCanvas()
 {
 	if (_display) {
+		thread_stop();
 		obs_display_remove_draw_callback(_display, draw_display,
 						 (void *)this);
 		obs_display_destroy(_display);
@@ -133,6 +115,7 @@ void InteractiveCanvas::initializeDisplay()
 	// Create the display
 	_display = obs_display_create(&settings, 0);
 	obs_display_add_draw_callback(_display, draw_display, _context);
+	thread_start();
 };
 
 void InteractiveCanvas::mousePressEvent(QMouseEvent *event)
@@ -177,6 +160,16 @@ void InteractiveCanvas::showEvent(QShowEvent *event)
 		initializeDisplay();
 	}
 }
+void InteractiveCanvas::wheelEvent(QWheelEvent *event)
+{
+	// Get the delta (amount of scroll)
+	int delta = event->angleDelta().y();
+	set_wheel(0, delta); // 
+	blog(LOG_INFO, "[patizo] Mouse wheel changed");
+
+	// Accept the event
+	event->accept();
+}
 void InteractiveCanvas::setSource(obs_source_t *source)
 {
 	auto s = (context_t *)_context;
@@ -185,9 +178,9 @@ void InteractiveCanvas::setSource(obs_source_t *source)
 		obs_source_release(old_source);
 	s->sourceToControl = obs_source_get_ref(source);
 
-	auto ndi_name = getNDIName(source);
-	if (ndi_name != "") {
-		s->receiver = _global_manager->getRecvInfo(ndi_name);
+	auto source_name = obs_source_get_name(source);
+	if (source_name != "") {
+		s->receiver = _global_manager->getRecvInfo(source_name);
 	}
 	s->new_source = true;
 	s->connected = false;
@@ -244,9 +237,9 @@ void InteractiveCanvas::focus(bool focus)
 	if (focus) {
 		bool flip;
 		visca_error_t errh = vc->getHorizontalFlip(flip);
-		float h_flip = flip ? -1.f : 1.f;
+		s->x_flip = flip ? 1.f : -1.f;
 		visca_error_t errv = vc->getVerticalFlip(flip);
-		float v_flip = flip ? -1.f : 1.f;
+		s->y_flip = flip ? 1.f : -1.f;
 
 		visca_error_t errz = vc->getZoomLevel(s->zoom);
 
@@ -255,94 +248,87 @@ void InteractiveCanvas::focus(bool focus)
 
 		blog(LOG_INFO,
 		     "[patizo] ptz_controller_focus h=%f, v=%f, e=%d, zoom=%d, %f %f",
-		     h_flip, v_flip, errz, s->zoom, s->pixels_to_pan,
+		     s->x_flip, s->y_flip, errz, s->zoom, s->pixels_to_pan,
 		     s->pixels_to_tilt);
 	}
 };
 
-class ControllerThread : public QThread {
-public:
-	ControllerThread(context_t *context) : _context(context) {}
+void ControllerThread::run()
+{
+	auto s = _context;
+	blog(LOG_INFO, "[patizo] ptz_controller_thread_run");
+	while (s->running) {
+		if (s->receiver->visca != nullptr) {
+			auto vc = s->receiver->visca;
+			if (s->y_delta != 0) {
+				int newZoom = std::clamp(
+					s->zoom + (s->y_delta / 4), 100,
+					400);
+				blog(LOG_INFO,
+					    "[patizo] ptz_controller zooming [%d] %d %d",
+					    s->y_delta, s->zoom, newZoom);
 
-protected:
-	void run() override
-	{
-		auto s = _context;
-		blog(LOG_INFO, "[patizo] ptz_controller_thread_run");
-		while (s->running) {
-			if (s->receiver->visca != nullptr) {
-				auto vc = s->receiver->visca;
-				if (s->y_delta != 0) {
-					int newZoom = std::clamp(
-						s->zoom + (s->y_delta * 4), 0,
-						16384);
-					blog(LOG_INFO,
-					     "[patizo] ptz_controller zooming [%d] %d %d",
-					     s->y_delta, s->zoom, newZoom);
-
-					s->zoom = newZoom;
-					auto err = vc->setZoomLevel(newZoom);
-
-					s->y_delta = 0;
-				}
-				if (s->drag_start) {
-					auto err = vc->getPanTilt(s->pt_start);
-					auto errz = vc->getZoomLevel(s->zoom);
-					s->pixels_to_pan =
-						pixels_to_pan_ratio(s->zoom);
-					s->pixels_to_tilt =
-						pixels_to_tilt_ratio(s->zoom);
-					blog(LOG_INFO,
-					     "[patizo] ptz_controller_mouse_click start drag err=%d, errz=%d, xy[%d,%d] pt[%d,%d]",
-					     err, errz, s->x_start, s->y_start,
-					     s->pt_start.value1,
-					     s->pt_start.value2);
-					s->drag_start = false;
-				}
-				if (s->mouse_down) {
-					int dx = s->x_start - s->x_move;
-					int dy = s->y_start - s->y_move;
-
-					visca_tuple_t dest = {
-						s->pt_start.value1 +
-							(int)((float)dx *
-							      s->pixels_to_pan),
-						s->pt_start.value2 +
-							(int)((float)dy *
-							      s->pixels_to_tilt)};
-					auto err = vc->setAbsolutePanTilt(dest);
-					blog(LOG_INFO,
-					     "[patizo] ptz_controller_mouse_move xy[%d,%d] pt[%d,%d] px[%6.4f,%6.4f]",
-					     s->x_start, s->y_start,
-					     dest.value1, dest.value2,
-					     s->pixels_to_pan,
-					     s->pixels_to_tilt);
-				}
-				/*
-				NDIlib_video_frame_v2_t video_frame;
-				NDIlib_recv_instance_t recv =
-					ptz_preview_get_recv();
-				if (ptz_preview_get_ndilib()->recv_capture_v2(
-					    recv, &video_frame, nullptr,
-					    nullptr, 1000) ==
-					    NDIlib_frame_type_status_change ) {
-					{
-					}
-					// Free the frame
-					ptz_preview_get_ndilib()
-						->recv_free_video_v2(
-							recv, &video_frame);
-				}
-				*/
+				s->zoom = newZoom;
+				auto err = vc->setZoomLevel(newZoom);
+				blog(LOG_INFO,
+				     "[patizo] ptz_controller zoomed [%d]",
+				     err);
+				s->y_delta = 0;
 			}
-			std::this_thread::sleep_for(
-				std::chrono::milliseconds(100));
-		};
-	}
+			if (s->drag_start) {
+				auto err = vc->getPanTilt(s->pt_start);
+				auto errz = vc->getZoomLevel(s->zoom);
+				s->pixels_to_pan =
+					pixels_to_pan_ratio(s->zoom);
+				s->pixels_to_tilt =
+					pixels_to_tilt_ratio(s->zoom);
+				blog(LOG_INFO,
+					    "[patizo] ptz_controller_mouse_click start drag err=%d, errz=%d, xy[%d,%d] pt[%d,%d]",
+					    err, errz, s->x_start, s->y_start,
+					    s->pt_start.value1,
+					    s->pt_start.value2);
+				s->drag_start = false;
+			}
+			if (s->mouse_down) {
+				int dx = s->x_start - s->x_move;
+				int dy = s->y_start - s->y_move;
 
-private:
-	context_t *_context;
-};
+				visca_tuple_t dest = {
+					s->pt_start.value1 +
+						(int)((float)dx *
+							    s->pixels_to_pan * s->x_flip),
+					s->pt_start.value2 +
+						(int)((float)dy *
+							    s->pixels_to_tilt * s->y_flip)};
+				auto err = vc->setAbsolutePanTilt(dest);
+				blog(LOG_INFO,
+					    "[patizo] ptz_controller_mouse_move xy[%d,%d] pt[%d,%d] px[%6.4f,%6.4f]",
+					    s->x_start, s->y_start,
+					    dest.value1, dest.value2,
+					    s->pixels_to_pan,
+					    s->pixels_to_tilt);
+			}
+			/*
+			NDIlib_video_frame_v2_t video_frame;
+			NDIlib_recv_instance_t recv =
+				ptz_preview_get_recv();
+			if (ptz_preview_get_ndilib()->recv_capture_v2(
+					recv, &video_frame, nullptr,
+					nullptr, 1000) ==
+					NDIlib_frame_type_status_change ) {
+				{
+				}
+				// Free the frame
+				ptz_preview_get_ndilib()
+					->recv_free_video_v2(
+						recv, &video_frame);
+			}
+			*/
+		}
+		std::this_thread::sleep_for(
+			std::chrono::milliseconds(100));
+	};
+}
 
 void InteractiveCanvas::thread_start()
 {
@@ -351,8 +337,8 @@ void InteractiveCanvas::thread_start()
 	s->new_source = false;
 	s->waiting_for_status = false;
 	s->connected = false;
-	//_controllerThread = new ControllerThread(s);
-	//_controllerThread->start();
+	_controllerThread = new ControllerThread(s);
+	_controllerThread->start();
 	blog(LOG_INFO, "[patizo] ptz_controller_thread_start");
 }
 
@@ -361,9 +347,9 @@ void InteractiveCanvas::thread_stop()
 	auto s = (context_t *)_context;
 	if (s->running) {
 		s->running = false;
-		//_controllerThread->quit();
-		//_controllerThread->wait();
-		//delete _controllerThread;
+		_controllerThread->quit();
+		_controllerThread->wait();
+		delete _controllerThread;
 	}
 	blog(LOG_INFO, "[patizo] ptz_controller_thread_stop");
 }

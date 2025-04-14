@@ -69,9 +69,9 @@ NDIPTZDeviceManager::~NDIPTZDeviceManager()
 	closeAllConnections();
 };
 
-Receiver *NDIPTZDeviceManager::getRecvInfo(const std::string &ndi_name)
+Receiver *NDIPTZDeviceManager::getRecvInfo(const std::string &source_name)
 {
-	auto it = _recvs.find(ndi_name);
+	auto it = _recvs.find(source_name);
 	if (it != _recvs.end()) {
 		return it->second;
 	}
@@ -158,13 +158,13 @@ void NDIPTZDeviceManager::onSceneChanged()
 	// If there are preview ndi sources, then use the first one,
 	// otherwise we are not in Studio mode, so allow preset recall on program
 	// source.
-	std::string ndi_name =
-		(preview_ndi_sources.size() > 0)   ? getNDIName(preview_ndi_sources[0])
-		: (program_ndi_sources.size() > 0) ? getNDIName(program_ndi_sources[0])
+	std::string source_name =
+		(preview_ndi_sources.size() > 0)   ? obs_source_get_name(preview_ndi_sources[0])
+		: (program_ndi_sources.size() > 0) ? obs_source_get_name(program_ndi_sources[0])
 						: "";
 
-	if (ndi_name != "") {
-		_current = ndi_name;
+	if (source_name != "") {
+		_current = source_name;
 		_currentPreviewStatus = PreviewStatus::OK;
 	} else {
 		_current = "";
@@ -207,10 +207,10 @@ std::vector<obs_source_t*> NDIPTZDeviceManager::createListOfNDISources(obs_scene
 		if (!obs_sceneitem_visible(item))
 			return true;
         obs_source_t* source = obs_sceneitem_get_source(item);
-        std::string ndi_name = getNDIName(source);
-        if (ndi_name == "") return true;
+        std::string source_name = obs_source_get_name(source);
+        if (source_name == "") return true;
 
-        blog(LOG_INFO, "[patizo] NDI name: %s, showing: %d", ndi_name.c_str(), obs_source_showing(source));
+        blog(LOG_INFO, "[patizo] NDI name: %s, showing: %d", source_name.c_str(), obs_source_showing(source));
         if (!obs_source_showing(source)) return true;
         sources->push_back(source);
         return true;
@@ -223,12 +223,12 @@ void NDIPTZDeviceManager::updateRecvInfo(const std::vector<obs_source_t *> sourc
 {
     bool changed = false;
     for (obs_source_t* source : source_list) {
-	    std::string ndi_name = getNDIName(source);
-        auto it = recvs.find(ndi_name);
+	    std::string source_name = obs_source_get_name(source);
+        auto it = recvs.find(source_name);
         if (it == recvs.end()) {
 			Receiver *recv_info = new Receiver();
 			recv_info->connect(source);
-			recvs[recv_info->ndi_name] = recv_info;
+			recvs[source_name] = recv_info;
 			changed = true;
         }
     }

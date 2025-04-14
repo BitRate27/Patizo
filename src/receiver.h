@@ -1,18 +1,19 @@
 #pragma once
 #include "plugin-main.h"
 
-std::string getNDIName(const obs_source_t *source);
-
 typedef std::function<void()> ReceiverChangedCallback;
 class Receiver {
 public:
 	Receiver();
 	void connect(obs_source_t *source);
-	std::string ndi_name;
+	std::string device_name;
 	obs_source_t *source;
 	NDIlib_recv_instance_t recv;
 	bool visca_supported;
 	ViscaAPI *visca;
+	enum class ReceiverType { NDI, WebCam, NotSupported };
+	ReceiverType getReceiverType(const obs_source_t *source);
+	std::string getDeviceName(const obs_source_t *source);
 
 private:
 	NDIlib_recv_instance_t connectRecv(const std::string &ndi_name);

@@ -1,40 +1,76 @@
 #include "receiver.h"
 #include <regex>
 
-std::string getNDIName(const obs_source_t *source)
+std::string Receiver::getDeviceName(const obs_source_t *source)
 {
-	std::string id = obs_source_get_id(source);
-	if (id != "ndi_source")
-		return "";
-	obs_data_t *data = obs_source_get_settings(source);
-	if (obs_data_get_bool(data, "ndi_ptz")) {
-		return obs_data_get_string(data, "ndi_source_name");
+	ReceiverType type = getReceiverType(source);
+	switch (type) {
+		case ReceiverType::NDI: {
+			obs_data_t *data = obs_source_get_settings(source);
+			if (obs_data_get_bool(data, "ndi_ptz")) {
+				return obs_data_get_string(data, "ndi_source_name");
+			}
+			return "";
+		}
+		case ReceiverType::WebCam: {
+			obs_data_t *data = obs_source_get_settings(source);
+			std::string video_device_id =
+				obs_data_get_string(data, "video_device_id");
+			// Find the position of the colon
+			size_t colon_pos = video_device_id.find(':');
+
+			// Extract the substring before the colon
+			std::string device_name =
+				(colon_pos != std::string::npos)
+					? video_device_id.substr(0, colon_pos)
+					: video_device_id; // If no colon is found, return the full string
+			// Remove leading and trailing whitespace
+			device_name.erase(
+				device_name.begin(),
+				std::find_if(device_name.begin(),
+					     device_name.end(),
+					     [](unsigned char ch) {
+						     return !std::isspace(ch);
+					     }));
+			return device_name;
+		}
 	}
 	return "";
 };
 Receiver::Receiver() {
-	ndi_name = "";
+	device_name = "";
 	source = nullptr;
 	recv = nullptr;
 	visca_supported = false;
 	visca = nullptr;
 };
+Receiver::ReceiverType Receiver::getReceiverType(const obs_source_t *source) {
+	std::string id = obs_source_get_id(source);
+	if (id == "ndi_source") {
+		return ReceiverType::NDI;
+	}
+	if (id == "dshow_input") {
+		return ReceiverType::WebCam;
+	}
+	return ReceiverType::NotSupported;
+};
 void Receiver::connect(obs_source_t *source) {
-	auto ndi_name = getNDIName(source);
-	this->recv = connectRecv(ndi_name);
+	auto device_name = getDeviceName(source);
+	if (getReceiverType(source) == ReceiverType::NDI)
+		this->recv = connectRecv(device_name);
 	visca = getViscaAPI(this->recv);
 	visca_supported =
 		(this->visca->connectionStatus() == VOK);
-	this->ndi_name = ndi_name;
+	this->device_name = device_name;
 	source = obs_source_get_ref(source);
 };
 
 NDIlib_recv_instance_t Receiver::connectRecv(
-					const std::string &ndi_name)
+					const std::string &device_name)
 {
 	NDIlib_recv_instance_t recv = nullptr;
 	NDIlib_source_t selected_source;
-	selected_source.p_ndi_name = ndi_name.data();
+	selected_source.p_ndi_name = device_name.data();
 
 	NDIlib_recv_create_v3_t recv_create_desc;
 	recv_create_desc.source_to_connect_to = selected_source;
