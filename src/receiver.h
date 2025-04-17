@@ -3,15 +3,16 @@
 
 typedef std::function<void()> ReceiverChangedCallback;
 class Receiver {
-public:
+public:	
+	enum class ReceiverType { NDI, WebCam, NotSupported };
 	Receiver();
-	void connect(obs_source_t *source);
+	void connect(obs_source_t *source, ReceiverType rtype, std::string IP, int port);
 	std::string device_name;
 	obs_source_t *source;
 	NDIlib_recv_instance_t recv;
 	bool visca_supported;
 	ViscaAPI *visca;
-	enum class ReceiverType { NDI, WebCam, NotSupported };
+
 	ReceiverType getReceiverType(const obs_source_t *source);
 	std::string getDeviceName(const obs_source_t *source);
 

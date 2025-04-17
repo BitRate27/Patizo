@@ -63,6 +63,7 @@ bool obs_module_load(void) {
 
 void obs_module_unload() {	
 	ptz_presets_destroy();
+	ptz_controller_destroy();
     g_ndiLib->destroy();
 	delete g_ndiptz;
 	delete loaded_lib;

@@ -6,6 +6,7 @@
 #include <obs.h>
 #include "receiver.h"
 
+
 typedef std::function<void()> RecvsChangedCallback;
 std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source);
 

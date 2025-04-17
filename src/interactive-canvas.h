@@ -4,6 +4,7 @@
 #include <qthread.h>
 #include <qevent.h>
 #include "ndi-ptz-device-manager.h"
+
 static NDIPTZDeviceManager *_global_manager;
 
 typedef struct context_t {
