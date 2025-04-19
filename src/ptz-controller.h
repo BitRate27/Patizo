@@ -223,7 +223,7 @@ protected:
 private slots:
 	void onSourceSelected(int index)
 	{
-		if (index >= 0 && index < _sources.size()) {
+		if (index >= 0 && index < (int)_sources.size()) {
 			obs_source_t *selectedSource = _sources[index];
 			std::string name = obs_source_get_name(selectedSource);
 			blog(LOG_INFO, "Selected Source: %s", name.c_str());
@@ -237,7 +237,7 @@ private slots:
     void onSettingsButtonClicked()
     {
         size_t index = _sourceComboBox->currentIndex();
-        if (index >= 0 && index < _sources.size()) {
+        if (index >= 0 && index < (int)_sources.size()) {
             obs_source_t *selectedSource = _sources[index];
             SourceSettingsDialog dialog(this, selectedSource);
             dialog.exec();
