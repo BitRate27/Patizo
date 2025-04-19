@@ -29,10 +29,10 @@ struct NetworkSettings {
 	int port = 3456; // Default VISCA port
 	bool useTCP = true;
 };
-extern std::map<std::string, NetworkSettings> _settingsMap;
 
-// Get network settings for a source
-extern NetworkSettings getSourceNetworkSettings(const std::string &sourceName);
+extern NetworkSettings *getSourceNetworkSettings(const obs_source_t *source);
+extern void setSourceNetworkSettings(const obs_source_t *source,
+				     NetworkSettings &settings);
 
 class SourceSettingsDialog : public QDialog {
     Q_OBJECT
@@ -118,7 +118,7 @@ private slots:
         }
         
         // Save settings to the map
-        _settingsMap[_sourceName] = settings;
+        setSourceNetworkSettings(_source,settings);
         
         blog(LOG_INFO, "Saved network settings for %s: IP=%s, Port=%d, Protocol=%s", 
              _sourceName.c_str(), settings.ipAddress.c_str(), settings.port, 
@@ -129,22 +129,14 @@ private slots:
 
 private:
     void loadSettings() {
-        auto it = _settingsMap.find(_sourceName);
-        if (it != _settingsMap.end()) {
-            // Settings exist, load them
-            NetworkSettings &settings = it->second;
-            _ipAddressEdit->setText(QString::fromStdString(settings.ipAddress));
-            _portSpinBox->setValue(settings.port);
-            if (settings.useTCP)
-                _tcpRadio->setChecked(true);
-            else
-                _udpRadio->setChecked(true);
-        } else {
-            // Default settings
-            _ipAddressEdit->setText("127.0.0.1");
-            _portSpinBox->setValue(3456);  // Default VISCA port
+        auto settings = getSourceNetworkSettings(_source);
+       
+        _ipAddressEdit->setText(QString::fromStdString(settings->ipAddress));
+        _portSpinBox->setValue(settings->port);
+        if (settings->useTCP)
             _tcpRadio->setChecked(true);
-        }
+        else
+            _udpRadio->setChecked(true);
     }
 
     obs_source_t *_source;
@@ -253,10 +245,10 @@ private slots:
             // After settings are updated, we might want to refresh or update connections
             // This would depend on your implementation
             std::string sourceName = obs_source_get_name(selectedSource);
-            auto settings = getSourceNetworkSettings(sourceName);
+            auto settings = getSourceNetworkSettings(selectedSource);
             blog(LOG_INFO, "Using network settings for %s: IP=%s, Port=%d, Protocol=%s", 
-                 sourceName.c_str(), settings.ipAddress.c_str(), settings.port, 
-                 settings.useTCP ? "TCP" : "UDP");
+                 sourceName.c_str(), settings->ipAddress.c_str(), settings->port, 
+                 settings->useTCP ? "TCP" : "UDP");
             
             // Here you would potentially reconnect or update network connections
             // based on the new settings

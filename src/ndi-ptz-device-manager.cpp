@@ -41,6 +41,7 @@ std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 							      "ndi_ptz")) {
 						sources->push_back(source);
 					}
+					obs_data_release(data);
 				}
 				if (id == "dshow_input") {
 					obs_data_t *data =
@@ -49,6 +50,7 @@ std::vector<obs_source_t *> getSourcesInScene(obs_source_t *scene_source)
 						obs_data_get_string(
 							data,
 							"video_device_id");
+					obs_data_release(data);
 					sources->push_back(source);
 				}
 			}
@@ -248,13 +250,13 @@ void NDIPTZDeviceManager::updateRecvInfo(
 		auto it = recvs.find(source_name);
 		if (it == recvs.end()) {
 			Receiver *recv_info = new Receiver();
-			auto settings = getSourceNetworkSettings(source_name);
+			auto settings = getSourceNetworkSettings(source);
 			recv_info->connect(
 				source,
-				settings.useTCP
+				settings->useTCP
 					? Receiver::ReceiverType::NDI
 					: Receiver::ReceiverType::WebCam,
-				settings.ipAddress, settings.port);
+				settings->ipAddress, settings->port);
 			recvs[source_name] = recv_info;
 			changed = true;
 		}

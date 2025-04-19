@@ -8,8 +8,12 @@ std::string Receiver::getDeviceName(const obs_source_t *source)
 	case ReceiverType::NDI: {
 		obs_data_t *data = obs_source_get_settings(source);
 		if (obs_data_get_bool(data, "ndi_ptz")) {
-			return obs_data_get_string(data, "ndi_source_name");
+			auto ndi_source_name =
+				obs_data_get_string(data, "ndi_source_name");
+			obs_data_release(data);
+			return ndi_source_name;
 		}
+		obs_data_release(data);
 		return "";
 	}
 	case ReceiverType::WebCam: {
@@ -31,6 +35,7 @@ std::string Receiver::getDeviceName(const obs_source_t *source)
 					       [](unsigned char ch) {
 						       return !std::isspace(ch);
 					       }));
+		obs_data_release(data);
 		return device_name;
 	}
 	}
@@ -98,6 +103,8 @@ void Receiver::connect(obs_source_t *source, ReceiverType rtype, std::string IP,
 			}
 			break;
 		}
+
+		case Receiver::ReceiverType::NotSupported:
 		default:
 			break;
 	}

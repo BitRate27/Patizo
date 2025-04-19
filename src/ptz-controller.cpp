@@ -15,19 +15,44 @@ void controller_on_scene_changed(enum obs_frontend_event event,
 
 PTZControllerWidget *g_dialog = nullptr;
 const char *patizoControllerDockID = "PatizoController";
-std::map<std::string, NetworkSettings> _settingsMap;
-// Get network settings for a source
-NetworkSettings getSourceNetworkSettings(const std::string &sourceName)
-{
-	auto it = _settingsMap.find(sourceName);
-	if (it != _settingsMap.end()) {
-		return it->second;
-	}
-	// Return default settings if not found
-	NetworkSettings defaultSettings;
-	return defaultSettings;
-}
 
+#define PTZ_SETTINGS "ptz_settings"
+#define PTZ_IP_ADDRESS "ip_address"
+#define PTZ_PORT "port"
+#define PTZ_USE_TCP "use_tcp"
+NetworkSettings *getSourceNetworkSettings(const obs_source_t *source)
+{
+	obs_data_t *data = obs_source_get_settings(source);
+	auto settingsObj = obs_data_get_obj(data, PTZ_SETTINGS);		
+	auto settings = new NetworkSettings();
+	if (!settingsObj) {
+		setSourceNetworkSettings(source, *settings);
+	} else {
+		settings->ipAddress =
+			obs_data_get_string(settingsObj, PTZ_IP_ADDRESS);
+		settings->port = obs_data_get_int(settingsObj, PTZ_PORT);
+		settings->useTCP = obs_data_get_bool(settingsObj, PTZ_USE_TCP);	
+		obs_data_release(settingsObj);
+	}
+
+	obs_data_release(data);
+	return settings;
+}
+void setSourceNetworkSettings(const obs_source_t *source, NetworkSettings &settings)
+{
+	obs_data_t *data = obs_source_get_settings(source);
+	auto settingsObj = obs_data_get_obj(data, PTZ_SETTINGS);
+	if (!settingsObj) {
+		settingsObj = obs_data_create();
+		obs_data_set_obj(data, PTZ_SETTINGS, settingsObj);
+	}
+	obs_data_set_string(settingsObj, PTZ_IP_ADDRESS,
+			    settings.ipAddress.c_str());
+	obs_data_set_int(settingsObj, PTZ_PORT, settings.port);
+	obs_data_set_bool(settingsObj, PTZ_USE_TCP, settings.useTCP);
+	obs_data_release(settingsObj);
+	obs_data_release(data);
+}
 void ptz_controller_init(const NDIlib_v4 *ndiLib, NDIPTZDeviceManager *manager)
 {
 	blog(LOG_INFO, "[patizo] obs_module_load: ptz_controller_init");
@@ -37,7 +62,6 @@ void ptz_controller_init(const NDIlib_v4 *ndiLib, NDIPTZDeviceManager *manager)
 
 	g_dialog = new PTZControllerWidget(mainWindow, ndiLib, manager);
 	g_dialog->show();
-	_settingsMap.clear();
 
 	obs_frontend_add_dock_by_id(
 		patizoControllerDockID,
