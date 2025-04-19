@@ -237,7 +237,7 @@ private slots:
     void onSettingsButtonClicked()
     {
         size_t index = _sourceComboBox->currentIndex();
-        if (index >= 0 && index < (int)_sources.size()) {
+        if (index >= 0 && (uint)index < _sources.size()) {
             obs_source_t *selectedSource = _sources[index];
             SourceSettingsDialog dialog(this, selectedSource);
             dialog.exec();

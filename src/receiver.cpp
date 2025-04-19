@@ -105,6 +105,11 @@ void Receiver::connect(obs_source_t *source, ReceiverType rtype, std::string IP,
 		}
 
 		case Receiver::ReceiverType::NotSupported:
+			blog(LOG_ERROR,
+			     "[patizo] Receiver type not supported: %s",
+			     device_name.c_str());
+			break;
+
 		default:
 			break;
 	}
