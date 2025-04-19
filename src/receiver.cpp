@@ -38,6 +38,10 @@ std::string Receiver::getDeviceName(const obs_source_t *source)
 		obs_data_release(data);
 		return device_name;
 	}
+	case ReceiverType::NotSupported:
+		blog(LOG_ERROR, "[patizo] Receiver type not supported: %s",
+		     obs_source_get_name(source));
+		break;
 	}
 	return "";
 };
@@ -65,53 +69,48 @@ void Receiver::connect(obs_source_t *source, ReceiverType rtype, std::string IP,
 {
 	auto device_name = getDeviceName(source);
 	switch (rtype) {
-		case Receiver::ReceiverType::NDI: {
+	case Receiver::ReceiverType::NDI: {
 
-			if (getReceiverType(source) == ReceiverType::NDI)
-				this->recv = connectRecv(device_name);
-			if (this->recv == nullptr) {
-				blog(LOG_ERROR,
-					 "[patizo] Failed to connect to NDI source: %s",
-					 device_name.c_str());
-				break;
-			}
-			auto status = visca->connectCamera(IP,
-							   port, false, false);
-			if (status != VOK) {
-				blog(LOG_ERROR,
-				     "[patizo] Failed to connect to camera. Error code: %d",
-				     status);
-			} else {
-				blog(LOG_INFO,
-				     "[patizo] Connected to camera: %s",
-				     device_name.c_str());
-			}
-			break;
-		}
-
-		case Receiver::ReceiverType::WebCam: {
-			auto status =
-				visca->connectCamera(IP, port, true, true);
-			if (status != VOK) {
-				blog(LOG_ERROR,
-				     "[patizo] Failed to connect to camera. Error code: %d",
-				     status);
-			} else {
-				blog(LOG_INFO,
-				     "[patizo] Connected to camera: %s",
-				     device_name.c_str());
-			}
-			break;
-		}
-
-		case Receiver::ReceiverType::NotSupported:
+		if (getReceiverType(source) == ReceiverType::NDI)
+			this->recv = connectRecv(device_name);
+		if (this->recv == nullptr) {
 			blog(LOG_ERROR,
-			     "[patizo] Receiver type not supported: %s",
+			     "[patizo] Failed to connect to NDI source: %s",
 			     device_name.c_str());
 			break;
+		}
+		auto status = visca->connectCamera(IP, port, false, false);
+		if (status != VOK) {
+			blog(LOG_ERROR,
+			     "[patizo] Failed to connect to camera. Error code: %d",
+			     status);
+		} else {
+			blog(LOG_INFO, "[patizo] Connected to camera: %s",
+			     device_name.c_str());
+		}
+		break;
+	}
 
-		default:
-			break;
+	case Receiver::ReceiverType::WebCam: {
+		auto status = visca->connectCamera(IP, port, true, true);
+		if (status != VOK) {
+			blog(LOG_ERROR,
+			     "[patizo] Failed to connect to camera. Error code: %d",
+			     status);
+		} else {
+			blog(LOG_INFO, "[patizo] Connected to camera: %s",
+			     device_name.c_str());
+		}
+		break;
+	}
+
+	case Receiver::ReceiverType::NotSupported:
+		blog(LOG_ERROR, "[patizo] Receiver type not supported: %s",
+		     device_name.c_str());
+		break;
+
+	default:
+		break;
 	}
 
 	visca_supported = (this->visca->connectionStatus() == VOK);
