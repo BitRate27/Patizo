@@ -17,6 +17,7 @@ PTZControllerWidget *g_dialog = nullptr;
 const char *patizoControllerDockID = "PatizoController";
 
 #define PTZ_SETTINGS "ptz_settings"
+#define PTZ_CAMERA_TYPE "camera_type"
 #define PTZ_IP_ADDRESS "ip_address"
 #define PTZ_PORT "port"
 #define PTZ_USE_TCP "use_tcp"
@@ -28,6 +29,8 @@ NetworkSettings *getSourceNetworkSettings(const obs_source_t *source)
 	if (!settingsObj) {
 		setSourceNetworkSettings(source, *settings);
 	} else {
+		settings->cameraType =
+			obs_data_get_string(settingsObj, PTZ_CAMERA_TYPE);
 		settings->ipAddress =
 			obs_data_get_string(settingsObj, PTZ_IP_ADDRESS);
 		settings->port = obs_data_get_int(settingsObj, PTZ_PORT);
@@ -46,6 +49,8 @@ void setSourceNetworkSettings(const obs_source_t *source, NetworkSettings &setti
 		settingsObj = obs_data_create();
 		obs_data_set_obj(data, PTZ_SETTINGS, settingsObj);
 	}
+	obs_data_set_string(settingsObj, PTZ_CAMERA_TYPE,
+			    settings.cameraType.c_str());
 	obs_data_set_string(settingsObj, PTZ_IP_ADDRESS,
 			    settings.ipAddress.c_str());
 	obs_data_set_int(settingsObj, PTZ_PORT, settings.port);
@@ -77,7 +82,8 @@ void ptz_controller_destroy()
 {
 	obs_frontend_remove_event_callback(controller_on_scene_changed, g_dialog);
 	obs_frontend_remove_dock(patizoControllerDockID);
-	if (g_dialog) {
+	if (g_dialog) {	
+		delete g_dialog;
 		//g_dialog->deleteLater();
 		g_dialog = nullptr;
 	}

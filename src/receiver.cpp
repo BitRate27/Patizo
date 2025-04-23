@@ -53,6 +53,11 @@ Receiver::Receiver()
 	visca_supported = false;
 	visca = new ViscaAPI();
 };
+Receiver::~Receiver()
+{
+	disconnectRecv(recv);
+	blog(LOG_INFO, "[patizo] Receiver destroyed");
+}
 Receiver::ReceiverType Receiver::getReceiverType(const obs_source_t *source)
 {
 	std::string id = obs_source_get_id(source);
@@ -129,7 +134,7 @@ NDIlib_recv_instance_t Receiver::connectRecv(const std::string &device_name)
 	recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
 	recv_create_desc.bandwidth = NDIlib_recv_bandwidth_metadata_only;
 
-	recv = g_ndiLib->recv_create_v3(&recv_create_desc);
+	//recv = g_ndiLib->recv_create_v3(&recv_create_desc);
 	return recv;
 };
 

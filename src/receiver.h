@@ -6,6 +6,7 @@ class Receiver {
 public:	
 	enum class ReceiverType { NDI, WebCam, NotSupported };
 	Receiver();
+	~Receiver();
 	void connect(obs_source_t *source, ReceiverType rtype, std::string IP, int port);
 	std::string device_name;
 	obs_source_t *source;

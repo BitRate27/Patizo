@@ -189,7 +189,7 @@ void NDIPTZDeviceManager::onSceneChanged()
 void NDIPTZDeviceManager::closeAllConnections()
 {
 	for (auto &recv : _recvs) {
-		if (recv.second->recv == nullptr)
+		if (recv.second->recv != nullptr)
 			g_ndiLib->recv_destroy(recv.second->recv);
 		if (recv.second->visca_supported) {
 			visca_error_t verr =

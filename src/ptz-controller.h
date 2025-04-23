@@ -28,6 +28,7 @@ struct NetworkSettings {
 	std::string ipAddress = "127.0.0.1";
 	int port = 3456; // Default VISCA port
 	bool useTCP = true;
+	std::string cameraType = "OBSBOT Tail Air"; // Default camera type
 };
 
 extern NetworkSettings *getSourceNetworkSettings(const obs_source_t *source);
@@ -40,16 +41,22 @@ public:
     SourceSettingsDialog(QWidget *parent, obs_source_t *source)
         : QDialog(parent), _source(source)
     {
-        setWindowTitle("Source Network Settings");
+        setWindowTitle("Patizo Source Settings");
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
         QFormLayout *formLayout = new QFormLayout();
 
         if (_source) {
             _sourceName = obs_source_get_name(_source);
-            QLabel *titleLabel = new QLabel(QString("Network Settings for: %1").arg(_sourceName.c_str()));
+            QLabel *titleLabel = new QLabel(QString("Source: %1").arg(_sourceName.c_str()));
             titleLabel->setStyleSheet("font-weight: bold;");
             mainLayout->addWidget(titleLabel);
-            
+
+	        // Camera Type selection
+	        _cameraTypeComboBox = new QComboBox();
+	        _cameraTypeComboBox->addItem("OBSBOT Tail Air");
+	        _cameraTypeComboBox->addItem("PTZ Optics");
+	        formLayout->addRow("Camera Type:", _cameraTypeComboBox);  
+
             // IP Address field
             _ipAddressEdit = new QLineEdit();
             formLayout->addRow("IP Address:", _ipAddressEdit);
@@ -59,24 +66,13 @@ public:
             _portSpinBox->setMinimum(1);
             _portSpinBox->setMaximum(65535);
             formLayout->addRow("Port:", _portSpinBox);
-            
-            // Protocol selection
-            QGroupBox *protocolGroup = new QGroupBox("Protocol");
-            QHBoxLayout *protocolLayout = new QHBoxLayout();
-            
-            _tcpRadio = new QRadioButton("TCP");
-            _udpRadio = new QRadioButton("UDP");
-            
-            _buttonGroup = new QButtonGroup(this);
-            _buttonGroup->addButton(_tcpRadio);
-            _buttonGroup->addButton(_udpRadio);
-            
-            protocolLayout->addWidget(_tcpRadio);
-            protocolLayout->addWidget(_udpRadio);
-            protocolGroup->setLayout(protocolLayout);
-            
-            formLayout->addRow(protocolGroup);
-            
+
+            // Protocol selection (ComboBox for TCP and UDP)
+	        _protocolComboBox = new QComboBox();
+	        _protocolComboBox->addItem("TCP");
+	        _protocolComboBox->addItem("UDP");
+	        formLayout->addRow("Protocol:", _protocolComboBox);
+
             // Load existing settings if available
             loadSettings();
         } else {
@@ -109,15 +105,22 @@ private slots:
         NetworkSettings settings;
         settings.ipAddress = _ipAddressEdit->text().toStdString();
         settings.port = _portSpinBox->value();
-        settings.useTCP = _tcpRadio->isChecked();
-        
+	    settings.useTCP =
+		    (_protocolComboBox->currentIndex() == 0); // 0 = TCP, 1 = UDP
+
         // Validate IP address (basic validation)
         if (settings.ipAddress.empty()) {
             QMessageBox::warning(this, "Invalid Settings", "IP Address cannot be empty.");
             return;
         }
         
-        // Save settings to the map
+        // Get selected camera type
+	    settings.cameraType =
+		_cameraTypeComboBox->currentText().toStdString();
+	    blog(LOG_INFO, "Selected Camera Type: %s",
+	         settings.cameraType.c_str());
+   
+        // Save settings to the source
         setSourceNetworkSettings(_source,settings);
         
         blog(LOG_INFO, "Saved network settings for %s: IP=%s, Port=%d, Protocol=%s", 
@@ -130,24 +133,31 @@ private slots:
 private:
     void loadSettings() {
         auto settings = getSourceNetworkSettings(_source);
-       
+	    // Set the camera type in the combo box
+	    int cameraTypeIndex = _cameraTypeComboBox->findText(
+		    QString::fromStdString(settings->cameraType));
+	    if (cameraTypeIndex != -1) {
+		    _cameraTypeComboBox->setCurrentIndex(cameraTypeIndex);
+	    } else {
+		    // Default to the first item if the camera type is not found
+		    _cameraTypeComboBox->setCurrentIndex(0);
+	    }
         _ipAddressEdit->setText(QString::fromStdString(settings->ipAddress));
         _portSpinBox->setValue(settings->port);
-        if (settings->useTCP)
-            _tcpRadio->setChecked(true);
-        else
-            _udpRadio->setChecked(true);
+
+	    // Set the protocol in the combo box
+	    _protocolComboBox->setCurrentIndex(settings->useTCP ? 0 : 1);
     }
 
     obs_source_t *_source;
 
     std::string _sourceName;
-    
+    QComboBox *_cameraTypeComboBox;    
     QLineEdit *_ipAddressEdit;
     QSpinBox *_portSpinBox;
-    QRadioButton *_tcpRadio;
-    QRadioButton *_udpRadio;
+    QComboBox *_protocolComboBox;
     QButtonGroup *_buttonGroup;
+
 };
 
 class PTZControllerWidget : public QWidget {
@@ -250,8 +260,11 @@ private slots:
                  sourceName.c_str(), settings->ipAddress.c_str(), settings->port, 
                  settings->useTCP ? "TCP" : "UDP");
             
-            // Here you would potentially reconnect or update network connections
-            // based on the new settings
+            auto recv = _manager->getRecvInfo(sourceName);
+	        recv->connect(selectedSource,
+			  settings->useTCP ? Receiver::ReceiverType::NDI
+					   : Receiver::ReceiverType::WebCam,
+			  settings->ipAddress, settings->port);
         }
     }
 

@@ -2,7 +2,6 @@
 #include "interactive-canvas.h"
 #include <qevent.h>
 #include <qwindow.h>
-#include <qthread.h>
 #include "Processing.NDI.Lib.h"
 
 ViscaAPI ptz_preview_get_visca_connection()
@@ -17,7 +16,7 @@ ViscaAPI ptz_preview_get_visca_connection()
 	return *recv->visca;
 }
 
-
+CameraConfig OBSBOT_Tail_Air = {100, 400};
 
 void draw_display(void *param, uint32_t cx, uint32_t cy)
 {
@@ -85,6 +84,7 @@ InteractiveCanvas::~InteractiveCanvas()
 				((context_t *)_context)->sourceToControl);
 		((context_t *)_context)->sourceToControl = nullptr;
 	}
+	bfree(_context);
 }
 
 void InteractiveCanvas::initializeDisplay()
@@ -183,6 +183,7 @@ void InteractiveCanvas::setSource(obs_source_t *source)
 		s->receiver = _global_manager->getRecvInfo(source_name);
 	}
 	s->new_source = true;
+	s->camera_config = OBSBOT_Tail_Air;
 	s->connected = false;
 }
 void InteractiveCanvas::set_wheel(int dx, int dy)
@@ -253,10 +254,9 @@ void InteractiveCanvas::focus(bool focus)
 	}
 };
 
-void ControllerThread::run()
-{
-	auto s = _context;
-	blog(LOG_INFO, "[patizo] ptz_controller_thread_run");
+void *controller_thread(void *data) {
+	auto s = (context_t *)data;
+	blog(LOG_INFO, "[patizo] ptz_controller_thread started");
 	while (s->running) {
 		if (s->receiver->visca != nullptr) {
 			auto vc = s->receiver->visca;
@@ -328,17 +328,18 @@ void ControllerThread::run()
 		std::this_thread::sleep_for(
 			std::chrono::milliseconds(100));
 	};
+	blog(LOG_INFO, "[patizo] ptz_controller_thread exitted");
+	return nullptr;
 }
 
 void InteractiveCanvas::thread_start()
 {
 	auto s = (context_t *)_context;
+	pthread_create(&_controllerThread, nullptr, controller_thread, s);
 	s->running = true;
 	s->new_source = false;
 	s->waiting_for_status = false;
 	s->connected = false;
-	_controllerThread = new ControllerThread(s);
-	_controllerThread->start();
 	blog(LOG_INFO, "[patizo] ptz_controller_thread_start");
 }
 
@@ -347,9 +348,8 @@ void InteractiveCanvas::thread_stop()
 	auto s = (context_t *)_context;
 	if (s->running) {
 		s->running = false;
-		_controllerThread->quit();
-		_controllerThread->wait();
-		delete _controllerThread;
+		pthread_join(_controllerThread, NULL);	
+		blog(LOG_INFO, "[patizo] ptz_controller_thread_stop");
 	}
-	blog(LOG_INFO, "[patizo] ptz_controller_thread_stop");
+
 }

@@ -1,9 +1,11 @@
 #pragma once
 #include <obs.h>
 #include <qwidget.h>
-#include <qthread.h>
 #include <qevent.h>
+#include <util/threading.h>
+#include <thread>
 #include "ndi-ptz-device-manager.h"
+#include "camera-config.h"
 
 static NDIPTZDeviceManager *_global_manager;
 
@@ -28,16 +30,9 @@ typedef struct context_t {
 	bool new_source;
 	bool waiting_for_status;
 	bool connected;
+	CameraConfig camera_config;
 } context_t;
 
-class ControllerThread : public QThread {
-public:
-	ControllerThread(context_t *context) : _context(context) {}
-protected:
-	void run() override;
-private:
-	context_t *_context;
-};
 class InteractiveCanvas : public QWidget {
 public:
 	InteractiveCanvas(QWidget *parent, NDIPTZDeviceManager *manager);
@@ -56,7 +51,7 @@ protected:
 
 private:
 	obs_display_t *_display = nullptr;
-	ControllerThread *_controllerThread = nullptr;
+	pthread_t _controllerThread;
 	void *_context = nullptr;
 	void initializeDisplay();
 	void set_wheel(int dx, int dy);
